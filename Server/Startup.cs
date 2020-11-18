@@ -25,6 +25,7 @@ namespace VeloTiming.Server
 
             services.AddControllersWithViews();
             services.AddRazorPages();
+            services.AddGrpc();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -48,12 +49,16 @@ namespace VeloTiming.Server
 
             app.UseRouting();
 
+            app.UseGrpcWeb();
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapRazorPages();
                 endpoints.MapControllers();
                 endpoints.MapFallbackToFile("index.html");
+                endpoints.MapGrpcService<Services.RacesService>().EnableGrpcWeb();
             });
+
         }
     }
 }
