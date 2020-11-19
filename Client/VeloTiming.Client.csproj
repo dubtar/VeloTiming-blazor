@@ -5,6 +5,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.14.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.33.1" />
+    <PackageReference Include="Grpc.Net.Client.Web" Version="2.33.1" />
+    <PackageReference Include="Grpc.Tools" Version="2.30.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="5.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.0" PrivateAssets="all" />
     <PackageReference Include="System.Net.Http.Json" Version="5.0.0" />
@@ -12,6 +19,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Shared\VeloTiming.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+      <Protobuf Include="..\Shared\Races.proto" GrpcServices="Client" Access="Internal">
+        <Link>Protos\Races.proto</Link>
+      </Protobuf>
   </ItemGroup>
 
 </Project>

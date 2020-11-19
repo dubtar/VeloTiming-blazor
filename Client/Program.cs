@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Grpc.Net.Client;
+using Grpc.Net.Client.Web;
 
 namespace VeloTiming.Client
 {
@@ -17,7 +19,15 @@ namespace VeloTiming.Client
             var builder = WebAssemblyHostBuilder.CreateDefault(args);
             builder.RootComponents.Add<App>("#app");
 
-            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+            var baseAddress = new Uri(builder.HostEnvironment.BaseAddress);
+
+            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = baseAddress });
+
+            builder.Services.AddSingleton(services =>
+            {
+                var handler = new GrpcWebHandler(GrpcWebMode.GrpcWebText, new HttpClientHandler());
+                return GrpcChannel.ForAddress(baseAddress, new GrpcChannelOptions { HttpHandler = handler });
+            });
 
             await builder.Build().RunAsync();
         }

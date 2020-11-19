@@ -1,0 +1,20 @@
+@page "/races/{paramRaceId}"
+
+<div class="container">
+    <h1>Гонка @raceId</h1>
+</div>
+
+@code {
+    [Parameter()]
+    public string ParamRaceId { get; set; }
+
+    private int? raceId
+    {
+        get
+        {
+            return
+                !string.IsNullOrWhiteSpace(ParamRaceId) && Int32.TryParse(ParamRaceId, out var res) ?
+            res : null;
+        }
+    }
+}

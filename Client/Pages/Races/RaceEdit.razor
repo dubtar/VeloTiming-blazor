@@ -1,0 +1,22 @@
+@page "/races/edit"
+@page "/races/edit/{paramRaceId}"
+
+<div class="container">
+    <h1> @(RaceId > 0 ? "Редактирование гонки" : "Добавление гонки")
+    </h1>
+</div>
+
+@code {
+    [Parameter]
+    public string ParamRaceId { get; set; }
+
+    protected int? RaceId
+    {
+        get
+        {
+            return !string.IsNullOrWhiteSpace(ParamRaceId) &&
+                int.TryParse(ParamRaceId, out var raceId) ? raceId: null;
+        }
+    }
+
+}
