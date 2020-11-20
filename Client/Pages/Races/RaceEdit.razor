@@ -1,22 +1,86 @@
 @page "/races/edit"
 @page "/races/edit/{paramRaceId}"
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager NavigationManager
+@inject IRaceSvc svc
 
 <div class="container">
-    <h1> @(RaceId > 0 ? "Редактирование гонки" : "Добавление гонки")
-    </h1>
+	<h1>
+		@(RaceId > 0 ? "Редактирование" + Model.Name : "Добавление гонки")
+	</h1>
+	@if (Error != null)
+	{
+		<div class="alert alert-danger">@Error</div>
+	}
+	else if (Model == null)
+	{
+		<LoadingSpinner />
+	}
+	else
+	{
+		<EditForm Model="@Model" OnValidSubmit="@OnSubmit">
+			<DataAnnotationsValidator />
+			<ValidationSummary />
+			<div class="form-group row">
+				<label for="name">Название</label>
+				<InputText id="name" @bind-Value="Model.Name" class="form-control" />
+			</div>
+			<div class="form-group row">
+				<label for="description">Описание</label>
+				<InputTextArea id="description" @bind-Value="Model.Description" class="form-control" />
+			</div>
+			<button type="submit" class="btn btn-primary">@(RaceId > 0 ? "Сохранить" : "Добавить" )</button>
+			<button type="button" class="btn btn-secondary" @onclick="@GoBack">Отмена</button>
+		</EditForm>
+	}
 </div>
 
 @code {
-    [Parameter]
-    public string ParamRaceId { get; set; }
+	[Parameter]
+	public string ParamRaceId { get; set; }
+	private RaceEditModel Model;
+	private string Error;
 
-    protected int? RaceId
-    {
-        get
-        {
-            return !string.IsNullOrWhiteSpace(ParamRaceId) &&
-                int.TryParse(ParamRaceId, out var raceId) ? raceId: null;
-        }
-    }
+	protected int? RaceId
+	{
+		get
+		{
+			return !string.IsNullOrWhiteSpace(ParamRaceId) &&
+				int.TryParse(ParamRaceId, out var raceId) ? raceId : null;
+		}
+	}
 
+	protected override async Task OnInitializedAsync()
+	{
+		try
+		{
+			await svc
+		}
+		catch(Exception ex)
+		{
+			Error = ex.ToString();
+		}
+	}
+
+	protected void OnSubmit()
+	{
+
+		GoBack();
+	}
+
+	protected void GoBack()
+	{
+		NavigationManager.NavigateTo("..");
+	}
+
+	public class RaceEditModel
+	{
+		[Required(ErrorMessage = "Название обязательно")]
+		[StringLength(50, ErrorMessage = "Слишком длинное")]
+		public string Name { get; set; }
+
+		public string Description { get; set; }
+		public DateTime Date { get; set; }
+
+	}
 }

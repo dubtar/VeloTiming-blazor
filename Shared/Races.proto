@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
-option csharp_namespace = "VeloTiming.Data";
+option csharp_namespace = "VeloTiming.Proto";
 
 message Race {
     int32 Id = 1;

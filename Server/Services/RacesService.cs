@@ -1,7 +1,7 @@
 using Grpc.Core;
 using System;
 using System.Threading.Tasks;
-using VeloTiming.Data;
+using VeloTiming.Proto;
 using Google.Protobuf.WellKnownTypes;
 
 namespace VeloTiming.Services

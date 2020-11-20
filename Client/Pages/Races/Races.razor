@@ -1,82 +1,80 @@
 @page "/"
 @page "/races"
 
-@inject Grpc.Net.Client.GrpcChannel Channel
+@inject IRaceSvc svc
 @inject NavigationManager NavigationManager
 
 <div class="container">
-    <h1>Гонки</h1>
+	<h1>Гонки</h1>
 
-    @if (error != null)
-    {
-        <div class="alert alert-danger">@error</div>
-    }
-    else if (races == null)
-    {
-        <p><em>Загрузка...</em></p>
-    }
-    else if (races.Count == 0)
-    {
-        <p> Гонок нет</p>
-    }
-    else
-    {
-        <table class="table table-striped table-hover">
-            <thead>
-                <tr>
-                    <th>Дата</th>
-                    <th>Название</th>
-                    <th>Описание</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var race in races)
-                {
-                    var raceId = race.Id;
-                    <tr @onclick=@(e => OpenRace(raceId))>
-                        <td>@Utils.FormatDate(race.Date)</td>
-                        <td>@race.Name</td>
-                        <td>@race.Description</td>
-                        <td @onclick=@(e => {}) @onclick:stopPropagation=true>
-                            <div>
-                                <NavLink class="btn btn-outline-primary" href=@($"/races/{raceId}")>Перейти</NavLink>
-                                <NavLink class="btn btn-outline-warning" href=@($"/races/edit/{raceId}")>Изменить</NavLink>
-                                <a class="btn btn-outline-danger" @onclick=@(e => DeleteRace(raceId))>Удалить</a>
-                            </div>
-                        </td>
-                    </tr>
-                }
-                </tbody>
-            </table>
-    }
-    <NavLink class="btn btn-primary" href=@($"/races/edit")>Добавить гонку</NavLink>
+	@if (error != null)
+	{
+		<div class="alert alert-danger">@error</div>
+	}
+	else if (races == null)
+	{
+		<p><em>Загрузка...</em></p>
+	}
+	else if (races.Count == 0)
+	{
+		<p> Гонок нет</p>
+	}
+	else
+	{
+		<table class="table table-striped table-hover">
+			<thead>
+				<tr>
+					<th>Дата</th>
+					<th>Название</th>
+					<th>Описание</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var race in races)
+				{
+					var raceId = race.Id;
+					<tr @onclick=@(e => OpenRace(raceId))>
+						<td>@Utils.FormatDate(race.Date)</td>
+						<td>@race.Name</td>
+						<td>@race.Description</td>
+						<td @onclick=@(e => {}) @onclick:stopPropagation=true>
+							<div>
+								<NavLink class="btn btn-outline-primary" href=@($"/races/{raceId}")>Перейти</NavLink>
+								<NavLink class="btn btn-outline-warning" href=@($"/races/edit/{raceId}")>Изменить</NavLink>
+								<a class="btn btn-outline-danger" @onclick=@(e => DeleteRace(raceId))>Удалить</a>
+							</div>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+	<NavLink class="btn btn-primary" href=@($"/races/edit")>Добавить гонку</NavLink>
 </div>
 @code {
-    private ICollection<VeloTiming.Data.Race> races;
-    private string error = null;
+	private static ICollection<VeloTiming.Proto.Race> races;
+	private string error = null;
 
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            var client = new VeloTiming.Data.Races.RacesClient(Channel);
-            var req = await client.getRacesAsync(new Data.GetRacesRequest());
-            races = req.Races;
-        }
-        catch (Exception exception)
-        {
-            error = exception.ToString();
-        }
-    }
+	protected override async Task OnInitializedAsync()
+	{
+		try
+		{
+			races = await svc.GetRaces();
+		}
+		catch (Exception exception)
+		{
+			error = exception.ToString();
+		}
+	}
 
-    protected void OpenRace(int raceId)
-    {
-        NavigationManager.NavigateTo($"/races/{raceId}");
-    }
+	protected void OpenRace(int raceId)
+	{
+		NavigationManager.NavigateTo($"/races/{raceId}");
+	}
 
-    protected void DeleteRace(int raceId)
-    {
+	protected void DeleteRace(int raceId)
+	{
 
-    }
+	}
 }
