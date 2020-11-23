@@ -9,6 +9,9 @@ namespace VeloTiming.Client.Pages.Races
 	{
 		Task<ICollection<Race>> GetAllRaces();
 		Task<Race> GetRace(int raceId);
+
+		Task<int> UpdateRace(Race race);
+		Task DeleteRace(int raceId);
 	}
 
 	internal class RaceSvc: IRaceSvc
@@ -20,23 +23,31 @@ namespace VeloTiming.Client.Pages.Races
 			this.channel = channel;
 		}
 
-		public Task<ICollection<Race>> GetAllRaces()
-		{
-			throw new System.NotImplementedException();
-		}
+		private Proto.Races.RacesClient Client =>
+			new Proto.Races.RacesClient(channel);
 
-		public Task<Race> GetRace(int raceId)
+		public async Task<Race> GetRace(int raceId)
 		{
-			var client = new Proto.Races.RacesClient(channel);
-			var req = new GetRaceRequest { raceId = raceId };
-			var res = await client.getRace()
+			var req = new GetRaceRequest() { RaceId = raceId };
+			var res = await Client.getRaceAsync(req);
+			return res;
 		}
 
 		public async Task<ICollection<Race>> GetAllRaces()
 		{
-			var client = new Proto.Races.RacesClient(channel);
-			var req = await client.getRacesAsync(new GetRacesRequest());
+			var req = await Client.getRacesAsync(new Google.Protobuf.WellKnownTypes.Empty());
 			return req.Races;
+		}
+
+		public async Task<int> UpdateRace(Race race)
+		{
+			var res = await Client.updateRaceAsync(race);
+			return res.Id;
+		}
+
+		public async Task DeleteRace(int raceId)
+		{
+			await Client.deleteRaceAsync(new DeleteRaceRequest { RaceId = raceId });
 		}
 	}
 }

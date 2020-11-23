@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 option csharp_namespace = "VeloTiming.Proto";
 
@@ -12,12 +13,20 @@ message Race {
 }
 
 service Races {
-    rpc getRaces (GetRacesRequest) returns (GetRacesResponse);
-}
-
-message GetRacesRequest {
+    rpc getRaces (google.protobuf.Empty) returns (GetRacesResponse);
+    rpc getRace (GetRaceRequest) returns (Race);
+    rpc updateRace (Race) returns (Race);
+    rpc deleteRace (DeleteRaceRequest) returns (google.protobuf.Empty);
 }
 
 message GetRacesResponse {
     repeated Race Races = 1;
+}
+
+message GetRaceRequest {
+    int32 RaceId = 1;
+}
+
+message DeleteRaceRequest {
+    int32 RaceId = 1;
 }

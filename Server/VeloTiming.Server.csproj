@@ -8,6 +8,12 @@
     <PackageReference Include="Grpc.AspNetCore" Version="2.33.1" />
     <PackageReference Include="Grpc.AspNetCore.Web" Version="2.33.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="5.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="5.0.0-*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="5.0.0-*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="5.0.0-*">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
