@@ -83,7 +83,9 @@
 			{
 				Model = new RaceEditModel()
 				{
-					Date = DateTimeOffset.Now
+					Date = DateTimeOffset.Now,
+					Description = string.Empty,
+					Name = string.Empty
 				};
 			}
 		}
@@ -107,7 +109,7 @@
 				Id = Model.Id,
 				Date = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(date),
 				Name = Model.Name,
-				Description = Model.Description
+				Description = Model.Description ?? string.Empty
 			});
 			GoBack();
 		}
