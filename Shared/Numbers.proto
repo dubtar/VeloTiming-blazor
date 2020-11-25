@@ -1,0 +1,20 @@
+﻿syntax = "proto3";
+import "google/protobuf/empty.proto";
+
+option csharp_namespace = "VeloTiming.Proto";
+
+message Number {
+	string Id = 1;
+	string Rfids = 2;
+}
+
+service Numbers {
+	rpc GetAllNumbers(google.protobuf.Empty) returns(GetAllNumbersResponse);
+	rpc UpdateNumber(Number) returns(google.protobuf.Empty);
+	rpc DeleteNumber(Number) returns(google.protobuf.Empty);
+}
+
+message GetAllNumbersResponse
+{
+	repeated Number Numbers =1;
+}

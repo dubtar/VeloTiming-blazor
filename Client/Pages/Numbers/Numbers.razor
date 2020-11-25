@@ -1,0 +1,157 @@
+﻿@page "/numbers"
+@inject NavigationManager NavigationManager
+@inject GrpcChannel channel
+@using System.ComponentModel.DataAnnotations
+
+<div class="container">
+	<h1 class="d-flex justify-content-between">Номера <small>@NumberInRange</small></h1>
+	@if (Error != null)
+	{
+		<div class="alert alert-danger">@Error</div>
+	}
+	@if (AllNumbers == null)
+	{
+		<LoadingSpinner />
+	}
+	else
+	{
+		@if (EditModel != null)
+		{
+			<EditForm Model="@EditModel" OnValidSubmit="@SaveNumber" class="my-3">
+				<DataAnnotationsValidator />
+				<ValidationSummary class="alert alert-danger" />
+				<div class="row">
+					<div class="form-group col">
+						<label for="number">Номер</label>
+						<InputText id="number" autofocus="true" @bind-Value="EditModel.Number" class="form-control" />
+						<ValidationMessage For="@(() => EditModel.Number)" class="invalid-feedback" />
+					</div>
+					<div class="form-group col">
+						<label for="rfids">Rfids (через пробел)</label>
+						<InputText @bind-Value="EditModel.Rfids" class="form-control" id="rfids"/>
+						<ValidationMessage For="@(() => EditModel.Rfids)" class="invalid-feedback" />
+					</div>
+				</div>
+				<div class="row">
+					<div class="col">
+						<button class="btn btn-primary" type="submit" disabled="@IsSaving">
+							@if (IsSaving)
+							{<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" />}
+							Сохранить
+						</button>
+						<button class="btn btn-secondary" type="reset" @onclick="@(() => EditModel = null)">Отмена</button>
+					</div>
+				</div>
+			</EditForm>
+		}
+		else
+		{
+			<button class="btn btn-primary my-3" @onclick="AddNumber">Добавить Номер</button>
+		}
+		<div class="row">
+			<div class="col">
+				<table class="table table-striped table-hover table-bordered">
+					<thead>
+						<tr>
+							<th>Номер</th>
+							<th>Rfid</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						@foreach (var num in AllNumbers)
+						{
+							var numId = num.Id;
+							var numRfids = num.Rfids;
+							<tr @key="numId">
+								<td>@numId</td>
+								<td>@num.Rfids</td>
+								<td>
+									<button class="btn btn-outline-primary" @onclick="() => EditNumber(numId, numRfids)">Править</button>
+									<button class="btn btn-outline-danger" @onclick="() => DeleteNumber(numId)">Удалить</button>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	}
+
+</div>
+
+@code {
+	string NumberInRange = "";
+	bool IsSaving = false;
+	string Error = null;
+	ICollection<Proto.Number> AllNumbers = null;
+	class NumberEditModel
+	{
+		[Required, StringLength(50)]
+		public string Number { get; set; }
+		[Required]
+		public string Rfids { get; set; }
+	}
+	NumberEditModel EditModel;
+
+	protected override async Task OnInitializedAsync()
+	{
+		try
+		{
+			var client = new Proto.Numbers.NumbersClient(channel);
+			var response = await client.GetAllNumbersAsync(new Google.Protobuf.WellKnownTypes.Empty());
+			AllNumbers = response.Numbers;
+		}
+		catch (Exception ex)
+		{
+			Error = ex.ToString();
+		}
+	}
+
+	void AddNumber() => EditNumber(string.Empty, string.Empty);
+
+	void EditNumber(string number, string rfids)
+	{
+		EditModel = new NumberEditModel { Number = number, Rfids = rfids };
+	}
+
+	async void DeleteNumber(string number)
+	{
+		try
+		{
+			IsSaving = true;
+			var client = new Proto.Numbers.NumbersClient(channel);
+			var request = new Proto.Number { Id = EditModel.Number, Rfids = "" };
+			await client.DeleteNumberAsync(request);
+		}
+		catch (Exception ex)
+		{
+			Error = ex.ToString();
+		}
+		finally
+		{
+			IsSaving = false;
+		}
+
+	}
+
+	async Task SaveNumber()
+	{
+		try
+		{
+			IsSaving = true;
+			var client = new Proto.Numbers.NumbersClient(channel);
+			var request = new Proto.Number { Id = EditModel.Number, Rfids = EditModel.Rfids };
+			await client.UpdateNumberAsync(request);
+			EditModel = null;
+		}
+		catch (Exception ex)
+		{
+			Error = ex.ToString();
+		}
+		finally
+		{
+			IsSaving = false;
+		}
+	}
+}

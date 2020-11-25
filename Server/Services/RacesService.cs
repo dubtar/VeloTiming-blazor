@@ -6,13 +6,13 @@ using Google.Protobuf.WellKnownTypes;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
-namespace VeloTiming.Services
+namespace VeloTiming.Server.Services
 {
 	public class RacesService : Races.RacesBase
 	{
-		private readonly Server.Data.RacesDbContext dbContext;
+		private readonly Data.RacesDbContext dbContext;
 
-		public RacesService(Server.Data.RacesDbContext dbContext)
+		public RacesService(Data.RacesDbContext dbContext)
 		{
 			this.dbContext = dbContext;
 		}
