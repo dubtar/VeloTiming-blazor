@@ -1,20 +1,72 @@
 @page "/races/{paramRaceId}"
+@inject IRaceSvc svc
 
 <div class="container">
-    <h1>Гонка @raceId</h1>
+	@if (!String.IsNullOrEmpty(Error))
+	{
+		<div class="alert alert-danger">@Error</div>
+	}
+	@if (Race == null)
+	{
+		<LoadingSpinner />
+	}
+	else
+	{
+		<h1>Гонка @Race.Name <small>@Race.Date.ToDateTimeOffset().ToString("d")</small></h1>
+		<p class="lead">@Race.Description</p>
+
+		<p>Здесь будут старты</p>
+		<ul class="nav nav-tabs">
+			<li class="nav-item">
+				<a class="nav-link @(CurrentTab == Tab.Categories ? "active" : "")"
+				   @onclick="@(() => CurrentTab = Tab.Categories)">
+					Категории
+				</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link @(CurrentTab == Tab.Riders ? "active" : "")"
+				   @onclick="@(() => CurrentTab = Tab.Riders)">
+					>Участники
+				</a>
+			</li>
+		</ul>
+		@switch (CurrentTab)
+		{
+			case Tab.Categories:
+				<RaceCategories RaceId="@RaceId"/>
+				break;
+			case Tab.Riders:
+				<div></div>
+				break;
+		}
+	}
 </div>
 
 @code {
-    [Parameter()]
-    public string ParamRaceId { get; set; }
+	[Parameter()]
+	public string ParamRaceId { get; set; }
+	int RaceId;
 
-    private int? raceId
-    {
-        get
-        {
-            return
-                !string.IsNullOrWhiteSpace(ParamRaceId) && Int32.TryParse(ParamRaceId, out var res) ?
-            res : null;
-        }
-    }
+	string Error = null;
+	Proto.Race Race = null;
+
+	enum Tab { Categories, Riders }
+	Tab CurrentTab = Tab.Categories;
+
+
+	protected override async Task OnInitializedAsync()
+	{
+		if (string.IsNullOrWhiteSpace(ParamRaceId) || !Int32.TryParse(ParamRaceId, out var RaceId))
+		{
+			return;
+		}
+		try
+		{
+			Race = await svc.GetRace(RaceId);
+		}
+		catch (Exception ex)
+		{
+			Error = ex.ToString();
+		}
+	}
 }

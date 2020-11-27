@@ -19,8 +19,6 @@ namespace VeloTiming.Server.Data
 
 		public virtual Race Race { get; set; }
 
-		[ForeignKey("Number")]
-		public string NumberId { get; set; }
-		public virtual Number Number { get; set; }
+		public string Number { get; set; }
 	}
 }

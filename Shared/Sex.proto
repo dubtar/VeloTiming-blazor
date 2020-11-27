@@ -1,0 +1,9 @@
+﻿syntax="proto3";
+
+option csharp_namespace = "VeloTiming.Proto";
+
+enum Sex {
+	ANY = 0;
+	MALE = 1;
+	FEMALE = 2;
+}

@@ -15,7 +15,6 @@ namespace VeloTiming.Server.Data
 
 		public virtual ICollection<Start> Starts { get; set; }
 
-		public virtual ICollection<Number> RaceNumbers { get; set; }
 		public string Description { get; set; }
 	}
 }

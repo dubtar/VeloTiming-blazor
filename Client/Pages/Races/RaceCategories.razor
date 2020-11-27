@@ -1,0 +1,133 @@
+﻿@inject GrpcChannel channel
+
+@if (Error != null)
+{
+	<div class="alert alert-danger">@Error</div>
+}
+@if (Categories == null)
+{
+	<LoadingSpinner />
+}
+else
+{
+	<table class="table table-striped table-hover table-bordered">
+		<thead>
+			<tr>
+				<th>Код</th>
+				<th>Название</th>
+				<th>Пол</th>
+				<th>Годы</th>
+				<th />
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (var cat in Categories)
+			{
+				var category = cat;
+				<tr @key="@cat.Id">
+					<td>@cat.Code</td>
+					<td>@cat.Name</td>
+					<td>@Utils.DisplaySex(cat.Sex)</td>
+					<td>@($"{cat.MinYearOfBirth?.ToString() ?? ""} - {cat.MaxYearOfBirth?.ToString() ?? ""}")</td>
+					<td>
+						<div class="btn-group">
+							<button class="btn btn-outline-primary" @onclick="() => EditCategory(category)" />
+							<button class="btn btn-outline-danger" @onclick="() => DeleteCategory(category.Id)" />
+						</div>
+					</td>
+
+				</tr>
+			}
+		</tbody>
+	</table>
+	@if (EditModel == null)
+	{
+		<button class="btn" @onclick="@(() => EditCategory(null))">Добавить категорию</button>
+	}
+	else
+	{
+		<EditForm Model="@EditModel" OnValidSubmit="@SaveCategory">
+			<DataAnnotationsValidator />
+		</EditForm>
+	}
+}
+
+@code {
+	[Parameter]
+	public int RaceId { get; set; }
+
+	ICollection<Proto.RaceCategory> Categories;
+	string Error;
+
+	protected override async Task OnInitializedAsync()
+	{
+		await LoadCategories();
+	}
+
+	async Task LoadCategories()
+	{
+		try
+		{
+			var client = new Proto.RaceCategories.RaceCategoriesClient(channel);
+			var response = await client.getByRaceAsync(new Proto.GetCategoriesByRaceRequest { RaceId = RaceId });
+			Categories = response.Categories;
+		}
+		catch (Exception ex)
+		{
+			Error = ex.ToString();
+		}
+		StateHasChanged();
+	}
+
+	void EditCategory(Proto.RaceCategory category)
+	{
+		EditModel = new RaceCategoryEditModel
+		{
+			// TODO
+		};
+	}
+
+	async Task DeleteCategory(int categoryId)
+	{
+		try
+		{
+			var client = new Proto.RaceCategories.RaceCategoriesClient(channel);
+			await client.deleteAsync(new Proto.DeleteCategoryRequest { RaceCategoryId = categoryId });
+			_ = LoadCategories();
+		}
+		catch (Exception ex)
+		{
+			Error = ex.ToString();
+		}
+
+	}
+
+	async Task SaveCategory()
+	{
+		try
+		{
+			var request = new Proto.RaceCategory
+			{
+				Code = EditModel.Code,
+				Id = EditModel.Id,
+				MaxYearOfBirth = EditModel.MaxYearOfBirth,
+				MinYearOfBirth = EditModel.MinYearOfBirth,
+				Name = EditModel.Name,
+				Sex = EditModel.Sex
+			};
+			var client = new Proto.RaceCategories.RaceCategoriesClient(channel);
+			await client.updateAsync(request);
+			_ = LoadCategories();
+		}
+		catch (Exception ex)
+		{
+			Error = ex.ToString();
+		}
+	}
+	RaceCategoryEditModel EditModel;
+
+	class RaceCategoryEditModel
+	{
+	}
+
+}

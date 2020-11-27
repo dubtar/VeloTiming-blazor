@@ -20,17 +20,17 @@
 	{
 		<EditForm Model="@Model" OnValidSubmit="@OnSubmit">
 			<DataAnnotationsValidator />
-			<ValidationSummary class="alert-danger" />
+			<ValidationSummary />
 			<div class="form-group">
 				<label for="name">Дата</label>
 				<InputDate id="name" @bind-Value="Model.Date" class="form-control" DisplayName="Дата" />
-				<ValidationMessage For="@(() => Model.Date)" class="invalid-feedback" />
+				<ValidationMessage For="@(() => Model.Date)" />
 			</div>
 			<div class="form-group">
 				<label for="name">Название</label>
 				<InputText id="name" @bind-Value="Model.Name" class="form-control" DisplayName="Название"
 						   />
-				<ValidationMessage For="@(() => Model.Name)"  class="invalid-feedback" />
+				<ValidationMessage For="@(() => Model.Name)" />
 			</div>
 			<div class="form-group">
 				<label for="description">Описание</label>

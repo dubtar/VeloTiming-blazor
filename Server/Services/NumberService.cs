@@ -44,6 +44,7 @@ namespace VeloTiming.Server.Services
 				dbContext.Add(number);
 			}
 			number.NumberRfids = request.Rfids;
+			await dbContext.SaveChangesAsync();
 			return new Empty();
 		}
 

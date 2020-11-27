@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -27,6 +27,12 @@
     </Protobuf>
     <Protobuf Include="..\Shared\Races.proto" GrpcServices="Server">
       <Link>Protos\Races.proto</Link>
+    </Protobuf>
+    <Protobuf Include="..\Shared\Sex.proto" GrpcServices="Server">
+      <Link>Protos\Sex.proto</Link>
+    </Protobuf>
+    <Protobuf Include="..\Shared\RaceCategory.proto" GrpcServices="Server">
+      <Link>Protos\RaceCategory.proto</Link>
     </Protobuf>
   </ItemGroup>
 
