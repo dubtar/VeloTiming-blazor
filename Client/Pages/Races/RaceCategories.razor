@@ -1,4 +1,5 @@
-﻿@inject GrpcChannel channel
+﻿@using System.ComponentModel.DataAnnotations
+@inject GrpcChannel channel
 
 @if (Error != null)
 {
@@ -42,12 +43,66 @@ else
 	</table>
 	@if (EditModel == null)
 	{
-		<button class="btn" @onclick="@(() => EditCategory(null))">Добавить категорию</button>
+		<button class="btn btn-outline-primary" @onclick="@(() => EditCategory(null))">Добавить категорию</button>
 	}
 	else
 	{
-		<EditForm Model="@EditModel" OnValidSubmit="@SaveCategory">
+		<EditForm Model="@EditModel" OnValidSubmit="@SaveCategory" class="bg-light p-3">
 			<DataAnnotationsValidator />
+
+			@if (EditModel.Id > 0)
+			{
+				<h3>Изменение категории</h3>
+			}
+			else
+			{
+				<h3>Добавление категории</h3>
+			}
+			<div class="form-row">
+				<div class="form-group col-1">
+					<label for="name">Код</label>
+					<InputText id="name" @bind-Value="EditModel.Code" class="form-control" DisplayName="Код" />
+					<ValidationMessage For="@(() => EditModel.Code)" />
+				</div>
+				<div class="form-group col-4">
+					<label for="name">Название</label>
+					<InputText Name="name" @bind-Value="EditModel.Name" class="form-control" DisplayName="Название" />
+					<ValidationMessage For="@(() => EditModel.Name)" />
+				</div>
+				<div class="form-group col-3">
+					<label for="sex">Пол</label>
+					<div>
+						<InputRadioGroup id="sex" @bind-Value="EditModel.Sex">
+							<div class="form-check form-check-inline">
+								<InputRadio id="sexany" Value="Proto.Sex.Any" class="form-check-input"></InputRadio>
+								<label class="form-check-label" for="sexany">Любой</label>
+							</div>
+							<div class="form-check form-check-inline">
+								<InputRadio Value="Proto.Sex.Male" id="sexm" class="form-check-input" />
+								<label class="form-check-label" for="sexm">Муж</label>
+							</div>
+							<div class="form-check form-check-inline">
+								<InputRadio Value="Proto.Sex.Female" id="sexf" class="form-check-input" />
+								<label class="form-check-label" for="sexf">Жен</label>
+							</div>
+						</InputRadioGroup>
+					</div>
+				</div>
+				<div class="form-group col-2">
+					<label for="minYearOfBirth">Г.р. мин</label>
+					<InputNumber min="1900" max="@(DateTime.Now.Year)" @bind-Value="EditModel.MinYearOfBirth" class="form-control" />
+					<ValidationMessage For="@(() => EditModel.MinYearOfBirth)" />
+				</div>
+				<div class="form-group col-2">
+					<label for="minYearOfBirth">Г.р. макс</label>
+					<InputNumber min="1900" max="@(DateTime.Now.Year)" @bind-Value="EditModel.MaxYearOfBirth" class="form-control" />
+					<ValidationMessage For="@(() => EditModel.MaxYearOfBirth)" />
+				</div>
+			</div>
+			<div class="form-row">
+				<button class="btn btn-primary" type="submit">Сохранить</button>
+				<button class="btn btn-outline-primary" @onclick="@(()=> EditModel = null)">Отмена</button>
+			</div>
 		</EditForm>
 	}
 }
@@ -83,7 +138,12 @@ else
 	{
 		EditModel = new RaceCategoryEditModel
 		{
-			// TODO
+			Id = category?.Id ?? 0,
+			Name = category?.Name,
+			Code = category?.Code,
+			MaxYearOfBirth = category?.MaxYearOfBirth,
+			MinYearOfBirth = category?.MinYearOfBirth,
+			Sex = category?.Sex ?? Proto.Sex.Any
 		};
 	}
 
@@ -106,7 +166,7 @@ else
 	{
 		try
 		{
-			var request = new Proto.RaceCategory
+			var category = new Proto.RaceCategory
 			{
 				Code = EditModel.Code,
 				Id = EditModel.Id,
@@ -116,7 +176,14 @@ else
 				Sex = EditModel.Sex
 			};
 			var client = new Proto.RaceCategories.RaceCategoriesClient(channel);
-			await client.updateAsync(request);
+			if (EditModel.Id == 0)
+			{
+				await client.addAsync(new Proto.AddRaceCategoryRequest { RaceId = RaceId, Category = category });
+			}
+			else
+			{
+				await client.updateAsync(category);
+			}
 			_ = LoadCategories();
 		}
 		catch (Exception ex)
@@ -128,6 +195,20 @@ else
 
 	class RaceCategoryEditModel
 	{
+		public int Id { get; set; }
+
+		[Required(ErrorMessage = "Код обязателен"), StringLength(3, ErrorMessage = "Максимум 3 символа")]
+		public string Code { get; set; }
+
+		[Required(ErrorMessage = "Название обязательно")]
+		public string Name { get; set; }
+
+		public Proto.Sex Sex { get; set; }
+
+		[LessThan(nameof(MaxYearOfBirth), ErrorMessage = "Должен быть меньше Макс")]
+		public int? MinYearOfBirth { get; set; }
+		// TODO: GreaterThan
+		public int? MaxYearOfBirth { get; set; }
 	}
 
 }

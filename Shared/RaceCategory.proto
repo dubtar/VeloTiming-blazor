@@ -18,6 +18,7 @@ message RaceCategory {
 service RaceCategories {
     rpc getByRace (GetCategoriesByRaceRequest) returns (GetRaceCategoriesByRaceResponse);
     rpc get(GetCategoryRequest) returns (RaceCategory);
+    rpc add(AddRaceCategoryRequest) returns (RaceCategory);
     rpc update(RaceCategory) returns(RaceCategory);
     rpc delete(DeleteCategoryRequest) returns (google.protobuf.Empty);
 }
@@ -39,4 +40,9 @@ message GetCategoryRequest
 message DeleteCategoryRequest
 {
     int32 RaceCategoryId = 1;
+}
+
+message AddRaceCategoryRequest {
+    int32 RaceId = 1;
+    RaceCategory Category = 2;
 }

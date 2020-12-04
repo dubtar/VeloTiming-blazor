@@ -59,6 +59,7 @@ namespace VeloTiming.Server
 				endpoints.MapFallbackToFile("index.html");
 				endpoints.MapGrpcService<Services.RacesService>().EnableGrpcWeb();
 				endpoints.MapGrpcService<Services.NumberService>().EnableGrpcWeb();
+				endpoints.MapGrpcService<Services.RaceCategoryService>().EnableGrpcWeb();
 			});
 
 		}
