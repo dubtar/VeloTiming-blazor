@@ -32,8 +32,8 @@ else
 					<td>@($"{cat.MinYearOfBirth?.ToString() ?? ""} - {cat.MaxYearOfBirth?.ToString() ?? ""}")</td>
 					<td>
 						<div class="btn-group">
-							<button class="btn btn-outline-primary" @onclick="() => EditCategory(category)" />
-							<button class="btn btn-outline-danger" @onclick="() => DeleteCategory(category.Id)" />
+							<button class="btn btn-outline-primary" @onclick="() => EditCategory(category)" >Изменить</button>
+							<button class="btn btn-outline-danger" @onclick="() => DeleteCategory(category.Id)" >Удалить</button>
 						</div>
 					</td>
 
@@ -116,7 +116,14 @@ else
 
 	protected override async Task OnInitializedAsync()
 	{
-		await LoadCategories();
+		if (RaceId <= 0)
+		{
+			Error = $"RaceId {RaceId}";
+		}
+		else 
+		{
+			await LoadCategories();
+		}
 	}
 
 	async Task LoadCategories()
@@ -178,12 +185,14 @@ else
 			var client = new Proto.RaceCategories.RaceCategoriesClient(channel);
 			if (EditModel.Id == 0)
 			{
-				await client.addAsync(new Proto.AddRaceCategoryRequest { RaceId = RaceId, Category = category });
+				var raceId = RaceId;
+				await client.addAsync(new Proto.AddRaceCategoryRequest { RaceId = raceId, Category = category });
 			}
 			else
 			{
 				await client.updateAsync(category);
 			}
+			EditModel = null;
 			_ = LoadCategories();
 		}
 		catch (Exception ex)
@@ -207,8 +216,8 @@ else
 
 		[LessThan(nameof(MaxYearOfBirth), ErrorMessage = "Должен быть меньше Макс")]
 		public int? MinYearOfBirth { get; set; }
-		// TODO: GreaterThan
+
+		[GreaterThan(nameof(MinYearOfBirth), ErrorMessage = "Должен быть больше Мин")]
 		public int? MaxYearOfBirth { get; set; }
 	}
-
 }

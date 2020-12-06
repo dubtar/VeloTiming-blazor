@@ -33,7 +33,7 @@
 		@switch (CurrentTab)
 		{
 			case Tab.Categories:
-				<RaceCategories RaceId="@RaceId"/>
+				<RaceCategories RaceId="@Race.Id"/>
 				break;
 			case Tab.Riders:
 				<div>Тут будут участники</div>
@@ -45,7 +45,6 @@
 @code {
 	[Parameter()]
 	public string ParamRaceId { get; set; }
-	int RaceId = 0;
 
 	string Error = null;
 	Proto.Race Race = null;
@@ -58,15 +57,18 @@
 	{
 		if (string.IsNullOrWhiteSpace(ParamRaceId) || !Int32.TryParse(ParamRaceId, out var RaceId))
 		{
-			return;
+			Error = "RaceId not provided";
 		}
-		try
+		else
 		{
-			Race = await svc.GetRace(RaceId);
-		}
-		catch (Exception ex)
-		{
-			Error = ex.ToString();
+			try
+			{
+				Race = await svc.GetRace(RaceId);
+			}
+			catch (Exception ex)
+			{
+				Error = ex.ToString();
+			}
 		}
 	}
 }
