@@ -2,7 +2,7 @@
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
-import "sex.proto";
+import "Sex.proto";
 
 option csharp_namespace = "VeloTiming.Proto";
 
