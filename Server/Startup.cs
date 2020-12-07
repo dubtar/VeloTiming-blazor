@@ -44,22 +44,22 @@ namespace VeloTiming.Server
 				app.UseHsts();
 			}
 
-			// app.UseHttpsRedirection();
+			app.UseHttpsRedirection();
 			app.UseBlazorFrameworkFiles();
 			app.UseStaticFiles();
 
 			app.UseRouting();
 
-			app.UseGrpcWeb();
+			app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
 
 			app.UseEndpoints(endpoints =>
 			{
 				endpoints.MapRazorPages();
 				endpoints.MapControllers();
-				endpoints.MapFallbackToFile("index.html");
 				endpoints.MapGrpcService<Services.RacesService>().EnableGrpcWeb();
 				endpoints.MapGrpcService<Services.NumberService>().EnableGrpcWeb();
 				endpoints.MapGrpcService<Services.RaceCategoryService>().EnableGrpcWeb();
+				endpoints.MapFallbackToFile("index.html");
 			});
 
 		}
