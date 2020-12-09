@@ -1,0 +1,54 @@
+﻿@using System.ComponentModel.DataAnnotations
+@inject GrpcChannel channel
+
+
+@if (Error != null)
+{
+	<div class="alert alert-danger">@Error</div>
+}
+@if (RidersList == null)
+{
+	<LoadingSpinner />
+}
+else
+{
+
+	<table class="table table-striped table-hover table-bordered">
+	</table>
+}
+
+@code {
+	[Parameter]
+	public int RaceId { get; set; }
+
+	ICollection<Proto.Rider> RidersList;
+	string Error;
+
+	protected override async Task OnInitializedAsync()
+	{
+		if (RaceId <= 0)
+		{
+			Error = $"RaceId {RaceId}";
+		}
+		else
+		{
+			await LoadRiders();
+		}
+	}
+
+	async Task LoadRiders()
+	{
+		try
+		{
+			var client = new Proto.Riders.RidersClient(channel);
+			var response = await client.getByRaceAsync(new Proto.GetRidersByRaceRequest { RaceId = RaceId });
+			RidersList = response.Riders;
+		}
+		catch (Exception ex)
+		{
+			Error = ex.ToString();
+		}
+		StateHasChanged();
+	}
+
+}

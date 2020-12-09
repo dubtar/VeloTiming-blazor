@@ -1,0 +1,52 @@
+﻿syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import "Sex.proto";
+
+option csharp_namespace = "VeloTiming.Proto";
+
+message Rider {
+    int32 Id = 1;
+    string Number = 2;
+    string FirstName = 3;
+    string LastName = 4;
+    Sex Sex = 5;
+    google.protobuf.Int32Value YearOfBirth = 6;
+    string Category = 7;
+    string CategoryName = 8;
+    string City = 9;
+    string Team = 10;
+}
+
+
+service Riders {
+    rpc getByRace (GetRidersByRaceRequest) returns (GetRidersByRaceResponse);
+    rpc get(GetRiderRequest) returns (Rider);
+    rpc add(AddRiderRequest) returns (Rider);
+    rpc update(Rider) returns(Rider);
+    rpc delete(DeleteRiderRequest) returns (google.protobuf.Empty);
+}
+
+message GetRidersByRaceRequest {
+    int32 RaceId = 1;
+}
+
+message GetRidersByRaceResponse {
+    repeated Rider Riders = 1;
+}
+
+message GetRiderRequest
+{
+    int32 RiderId = 1;
+}
+
+message DeleteRiderRequest
+{
+    int32 RiderId = 1;
+}
+
+message AddRiderRequest {
+    int32 RaceId = 1;
+    Rider Rider = 2;
+}
