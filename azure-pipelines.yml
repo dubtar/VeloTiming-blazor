@@ -29,8 +29,8 @@ steps:
 #     arguments: '--configuration $(buildConfiguration)'
 - task: DotNetCoreCLI@2
   inputs:
-    command: 'publish'
-    publishWebProjects: True
+    command: publish
+    publishWebProjects: false
     projects: 'Server/*.csproj'
     arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
     zipAfterPublish: True
@@ -45,4 +45,4 @@ steps:
   inputs:
     azureSubscription: 'VeloTiming'
     appName: 'VeloTiming'
-    package: $(Build.ArtifactStagingDirectory)/**/*.zip    
+    package: $(Build.ArtifactStagingDirectory)/**/*.zip
