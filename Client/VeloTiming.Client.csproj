@@ -18,10 +18,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Shared\VeloTiming.Shared.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<Protobuf Include="..\Shared\Races.proto" GrpcServices="Client" Access="Internal">
 			<Link>Protos\Races.proto</Link>
 		</Protobuf>

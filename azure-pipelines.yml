@@ -29,8 +29,9 @@ steps:
 #     arguments: '--configuration $(buildConfiguration)'
 - task: DotNetCoreCLI@2
   inputs:
-    command: publish
+    command: 'publish'
     publishWebProjects: True
+    projects: 'Server/*.csproj'
     arguments: '--configuration $(BuildConfiguration) --output $(Build.ArtifactStagingDirectory)'
     zipAfterPublish: True
 

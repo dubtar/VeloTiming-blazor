@@ -18,7 +18,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Client\VeloTiming.Client.csproj" />
-    <ProjectReference Include="..\Shared\VeloTiming.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
