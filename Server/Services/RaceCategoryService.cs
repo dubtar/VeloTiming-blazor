@@ -64,7 +64,7 @@ namespace VeloTiming.Server.Services
 			raceCategory.Code = request.Code;
 			raceCategory.MaxYearOfBirth = request.MaxYearOfBirth;
 			raceCategory.MinYearOfBirth = request.MinYearOfBirth;
-			raceCategory.Sex = request.Sex == Sex.Any ? null : request.Sex == Sex.Male ? Data.Sex.Male : Data.Sex.Female;
+			raceCategory.Sex = Data.SexConverter.FromProto(request.Sex);
 		}
 
 		public override async Task<Empty> delete(DeleteCategoryRequest request, ServerCallContext context)
@@ -86,7 +86,7 @@ namespace VeloTiming.Server.Services
 				Id = r.Id,
 				Name = r.Name,
 				Code = r.Code,
-				Sex = r.Sex == null ? Sex.Any : r.Sex == Data.Sex.Male ? Sex.Male : Sex.Female,
+				Sex = Data.SexConverter.ToProto(r.Sex),
 				MinYearOfBirth = r.MinYearOfBirth,
 				MaxYearOfBirth = r.MaxYearOfBirth
 			};

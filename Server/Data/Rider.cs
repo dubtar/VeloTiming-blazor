@@ -7,8 +7,8 @@ namespace VeloTiming.Server.Data
 		public int Id { get; set; }
 		public string FirstName { get; set; }
 		public string LastName { get; set; }
-		public Sex Sex { get; set; }
-		public int YearOfBirth { get; set; }
+		public Sex? Sex { get; set; }
+		public int? YearOfBirth { get; set; }
 		public string City { get; set; }
 		public string Team { get; set; }
 

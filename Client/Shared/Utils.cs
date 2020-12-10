@@ -9,12 +9,13 @@ namespace VeloTiming.Client
 			if (time == null) return string.Empty;
 			return time.ToDateTime().ToShortDateString();
 		}
-		internal static string DisplaySex(Proto.Sex sex)
+		internal static string FormatSex(Proto.Sex sex, bool anyAsEmpty = false)
 		{
-			return sex == Proto.Sex.Any ? "Любой" :
+			return sex == Proto.Sex.Any ? (anyAsEmpty ? "" : "Любой") :
 				sex == Proto.Sex.Male ? "Муж" :
 				sex == Proto.Sex.Female ? "Жен" :
 				sex.ToString();
 		}
+
 	}
 }

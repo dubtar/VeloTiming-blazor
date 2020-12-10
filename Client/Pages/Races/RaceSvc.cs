@@ -7,11 +7,13 @@ namespace VeloTiming.Client.Pages.Races
 {
 	internal interface IRaceSvc
 	{
-		Task<ICollection<Race>> GetAllRaces();
+		Task<IList<Race>> GetAllRaces();
 		Task<Race> GetRace(int raceId);
 
 		Task<int> UpdateRace(Race race);
 		Task DeleteRace(int raceId);
+
+		Task<IList<RaceCategory>> GetRaceCategories(int raceId);
 	}
 
 	internal class RaceSvc: IRaceSvc
@@ -33,7 +35,7 @@ namespace VeloTiming.Client.Pages.Races
 			return res;
 		}
 
-		public async Task<ICollection<Race>> GetAllRaces()
+		public async Task<IList<Race>> GetAllRaces()
 		{
 			var req = await Client.getRacesAsync(new Google.Protobuf.WellKnownTypes.Empty());
 			return req.Races;
@@ -48,6 +50,12 @@ namespace VeloTiming.Client.Pages.Races
 		public async Task DeleteRace(int raceId)
 		{
 			await Client.deleteRaceAsync(new DeleteRaceRequest { RaceId = raceId });
+		}
+		public async Task<IList<RaceCategory>> GetRaceCategories(int raceId)
+		{
+			var res = await new Proto.RaceCategories.RaceCategoriesClient(channel)
+				.getByRaceAsync(new GetCategoriesByRaceRequest { RaceId = raceId });
+			return res.Categories;
 		}
 	}
 }

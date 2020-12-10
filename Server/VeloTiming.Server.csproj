@@ -25,14 +25,17 @@
     <Protobuf Include="..\Shared\Numbers.proto" GrpcServices="Server">
       <Link>Protos\Numbers.proto</Link>
     </Protobuf>
+    <Protobuf Include="..\Shared\RaceCategory.proto" GrpcServices="Server">
+      <Link>Protos\RaceCategory.proto</Link>
+    </Protobuf>
     <Protobuf Include="..\Shared\Races.proto" GrpcServices="Server">
       <Link>Protos\Races.proto</Link>
     </Protobuf>
+    <Protobuf Include="..\Shared\Rider.proto" GrpcServices="Server">
+      <Link>Protos\Rider.proto</Link>
+    </Protobuf>
     <Protobuf Include="..\Shared\Sex.proto" GrpcServices="Server">
       <Link>Protos\Sex.proto</Link>
-    </Protobuf>
-    <Protobuf Include="..\Shared\RaceCategory.proto" GrpcServices="Server">
-      <Link>Protos\RaceCategory.proto</Link>
     </Protobuf>
   </ItemGroup>
 

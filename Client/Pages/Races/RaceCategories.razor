@@ -1,5 +1,6 @@
 ﻿@using System.ComponentModel.DataAnnotations
 @inject GrpcChannel channel
+@inject IRaceSvc raceSvc
 
 @if (Error != null)
 {
@@ -28,7 +29,7 @@ else
 				<tr @key="@cat.Id">
 					<td>@cat.Code</td>
 					<td>@cat.Name</td>
-					<td>@Utils.DisplaySex(cat.Sex)</td>
+					<td>@Utils.FormatSex(cat.Sex)</td>
 					<td>@($"{cat.MinYearOfBirth?.ToString() ?? ""} - {cat.MaxYearOfBirth?.ToString() ?? ""}")</td>
 					<td>
 						<div class="btn-group">
@@ -130,9 +131,7 @@ else
 	{
 		try
 		{
-			var client = new Proto.RaceCategories.RaceCategoriesClient(channel);
-			var response = await client.getByRaceAsync(new Proto.GetCategoriesByRaceRequest { RaceId = RaceId });
-			Categories = response.Categories;
+			Categories = await raceSvc.GetRaceCategories(RaceId);
 		}
 		catch (Exception ex)
 		{

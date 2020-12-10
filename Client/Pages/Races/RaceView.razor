@@ -36,7 +36,7 @@
 				<RaceCategories RaceId="@Race.Id"/>
 				break;
 			case Tab.Riders:
-				<Riders RaceId="@Race.Id"/>
+				<Riders RaceId="@Race.Id" />
 				break;
 		}
 	}
@@ -48,6 +48,7 @@
 
 	string Error = null;
 	Proto.Race Race = null;
+	IList<Proto.RaceCategory> Categories = null;
 
 	enum Tab { Categories, Riders }
 	Tab CurrentTab = Tab.Categories;
@@ -63,7 +64,10 @@
 		{
 			try
 			{
-				Race = await svc.GetRace(RaceId);
+				var racePromise = svc.GetRace(RaceId);
+				var categoriesPromise = svc.GetRaceCategories(RaceId);
+				Race = await racePromise;
+				Categories = await categoriesPromise;
 			}
 			catch (Exception ex)
 			{
