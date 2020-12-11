@@ -65,7 +65,8 @@
 					</div>
 					<div class="form-group col-1">
 						<label for="YearOfBirth">Г.р.</label>
-						<InputNumber name="YearOfBirth" min="1900" max="@(DateTime.Now.Year)" @bind-Value="EditModel.YearOfBirth" class="form-control" DisplayName="Год рождения" />
+						<InputNumber name="YearOfBirth" min="1900" max="@(DateTime.Now.Year)"
+									 @bind-Value="EditModel.YearOfBirth" class="form-control" DisplayName="Год рождения" />
 						<ValidationMessage For="@(() => EditModel.YearOfBirth)" />
 					</div>
 					<div class="form-group col-2">
@@ -198,6 +199,7 @@
 			Team = rider?.Team ?? "",
 			YearOfBirth = rider?.YearOfBirth
 		};
+		EditModel.OnYearChange += OnYearChange;
 	}
 
 	private async Task DeleteRider(int riderId)
@@ -265,12 +267,40 @@
 
 		public Proto.Sex Sex { get; set; }
 
+		public event EventHandler OnYearChange;
+		private int? yearOfBirth;
 		[YearRange(1900, ErrorMessage = "Год рождения некорректный")]
-		public int? YearOfBirth { get; set; }
+		public int? YearOfBirth
+		{
+			get
+			{
+				return yearOfBirth;
+			}
+			set { yearOfBirth = value; OnYearChange?.Invoke(this, null); }
+		}
 
 		public string Category { get; set; } = "";
 		public string City { get; set; } = "";
 		public string Team { get; set; } = "";
+	}
+
+	private void OnYearChange(object _, EventArgs __)
+	{
+		if (EditModel == null || !string.IsNullOrEmpty(EditModel.Category) ||
+			EditModel.YearOfBirth == null || EditModel.YearOfBirth < 1900 ||
+			EditModel.YearOfBirth > DateTime.Now.Year ||
+			Categories == null)
+			return;
+		var category = Categories.FirstOrDefault(c =>
+			(c.MinYearOfBirth != null || c.MaxYearOfBirth != null) && // only categories with years
+			(c.Sex == Proto.Sex.Any || c.Sex == EditModel.Sex) &&
+			(c.MinYearOfBirth == null || c.MinYearOfBirth <= EditModel.YearOfBirth) &&
+			(c.MaxYearOfBirth == null || c.MaxYearOfBirth >= EditModel.YearOfBirth)
+		);
+		if (category != null)
+		{
+			EditModel.Category = category.Code;
+		}
 	}
 
 	private void OnKeyDown(object _, KeyboardEvent args)
