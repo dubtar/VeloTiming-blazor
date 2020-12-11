@@ -18,6 +18,7 @@
 		@if (EditModel == null)
 		{
 			<button class="btn btn-outline-primary my-3" @onclick="@(() => EditRider(null))">Добавить участника (Ins)</button>
+			<button class="btn btn-secondary float-right" @onclick="@ShowImport">Импорт участников</button>
 		}
 		else
 		{
@@ -137,6 +138,7 @@
 				}
 			</tbody>
 		</table>
+		<ImportRiders @ref="importRiders" />
 	}
 </div>
 
@@ -146,9 +148,11 @@
 
 
 	IList<Proto.Rider> RidersList;
-	IList<Proto.RaceCategory> Categories { get; set; }
+	IList<Proto.RaceCategory> Categories;
 	string Error;
+	ImportRiders importRiders;
 
+	//TODO: subscribe to rfid signalR and set number for edited rider
 	protected override async Task OnInitializedAsync()
 	{
 		KeyboardHandler.OnDocumentKeyDown += OnKeyDown;
@@ -310,5 +314,9 @@
 			EditRider(null);
 			StateHasChanged();
 		}
+	}
+	private void ShowImport()
+	{
+		importRiders.Show();
 	}
 }
