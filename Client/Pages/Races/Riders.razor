@@ -2,8 +2,9 @@
 @inject GrpcChannel channel
 @inject IRaceSvc raceSvc
 @inject IJSRuntime jsRuntime
+@implements IDisposable
 
-<div @onkeydown="OnKeyDown" tabindex="0">
+<div tabindex="0">
 	@if (Error != null)
 	{
 		<div class="alert alert-danger">@Error</div>
@@ -149,6 +150,8 @@
 
 	protected override async Task OnInitializedAsync()
 	{
+		KeyboardHandler.OnDocumentKeyDown += OnKeyDown;
+
 		if (RaceId <= 0)
 		{
 			Error = $"RaceId {RaceId}";
@@ -157,6 +160,11 @@
 		{
 			await LoadRiders();
 		}
+	}
+
+	public void Dispose()
+	{
+		KeyboardHandler.OnDocumentKeyDown -= OnKeyDown;
 	}
 
 	async Task LoadRiders()
@@ -265,11 +273,12 @@
 		public string Team { get; set; } = "";
 	}
 
-	private void OnKeyDown(KeyboardEventArgs args)
+	private void OnKeyDown(object _, KeyboardEvent args)
 	{
 		if (args.Key == "Insert" && RidersList != null && EditModel == null)
 		{
 			EditRider(null);
+			StateHasChanged();
 		}
 	}
 }
