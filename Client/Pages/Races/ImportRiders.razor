@@ -1,17 +1,191 @@
-﻿<Modal @ref="modal">
+﻿@inject IRaceSvc raceSvc
+
+@if (Result != null)
+{
+	<div class="alert alert-success">
+		@Result
+		<button type="button" class="close" aria-label="Close" @onclick="@(() => Result = null)"
+				><span aria-hidden="true">&times;</span></button>
+	</div>
+}
+<Modal @ref="modal">
 	<Title>Импорт участников из CSV</Title>
 	<Body>
-		Something here
+		@if (Error != null)
+		{
+			<div class="alert alert-danger">@Error</div>
+		}
+		@if (FileContent == null)
+		{
+			<form>
+				<div class="form-group">
+					<InputFile OnChange="FileSelected" label="СSV Файл для импорта" pattern="*.scv" class="form-control" />
+				</div>
+			</form>
+		}
+		else
+		{
+			<div class="form-check">
+				<InputCheckbox @bind-Value="SkipFirstRow" class="form-check-input" id="skipFirstRow" />
+				<label class="form-check-label" for="skipFirstRow">Пропускать первую строку</label>
+				<table class="table table-striped table-bordered">
+					<thead>
+						<tr>
+							@for (int i = 0; i < ColumnTypes.Length; i++)
+							{
+								var columnType = ColumnTypes[i];
+								<th @key="@i">
+									<InputSelect @bind-Value="@columnType" class="form-control-sm form-control">
+										<option value="@Proto.RiderImportColumnType.Skip">Пропустить</option>
+										<option value="@Proto.RiderImportColumnType.Lastname">Фамилия</option>
+										<option value="@Proto.RiderImportColumnType.Firstname">Имя</option>
+										<option value="@Proto.RiderImportColumnType.Lastfirstname">Фамилия Имя</option>
+										<option value="@Proto.RiderImportColumnType.Lastfirstname">Имя Фамилия</option>
+										<option value="@Proto.RiderImportColumnType.Sex">Пол</option>
+										<option value="@Proto.RiderImportColumnType.Year">Год рождения</option>
+										<option value="@Proto.RiderImportColumnType.City">Город</option>
+										<option value="@Proto.RiderImportColumnType.Team">Команда</option>
+									</InputSelect>
+								</th>
+							}
+						</tr>
+					</thead>
+					<tbody>
+						@for (var i = 0; i < Rows.Length; i++)
+						{
+							if (SkipFirstRow && i == 0) continue;
+							var row = Rows[i];
+							<tr @key="@i">
+								@for (int j = 0; j < row.Length; j++)
+								{
+									<td @key="@j">row[j]</td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
 	</Body>
 	<Footer>
-		Footer
+		<button class="btn btn-primary" disabled="@(FileContent == null || IsImporting)" @onclick="Import">Импортировать</button>
+		<button class="btn btn-secondary" @onclick="Close">Отмена</button>
 	</Footer>
 </Modal>
 @code {
+	[Parameter]
+	public int RaceId { get; set; }
+
+
 	private Modal modal;
+	private string Result;
+	private string Error;
+	private string FileContent;
+	private string[][] Rows;
+	private Proto.RiderImportColumnType[] ColumnTypes;
+	private bool SkipFirstRow;
+	private bool IsImporting;
 
 	public void Show()
 	{
 		modal.Open();
+	}
+
+	public void Close()
+	{
+		modal.Close();
+	}
+
+	private async Task FileSelected(InputFileChangeEventArgs args)
+	{
+		if (args.File != null)
+		{
+			var buffer = new byte[1024];
+			using (var stream = new System.IO.StreamReader(args.File.OpenReadStream(), true))
+			{
+				var content = await stream.ReadToEndAsync();
+				ParseList(content);
+			}
+		}
+	}
+
+	private void ParseList(string content)
+	{
+		const string SEP = ";";
+		Rows = content.Split('\n', 15).Select(l => l.Split(SEP)).ToArray();
+		if (Rows.Length > 0)
+		{
+			FileContent = content;
+			ColumnTypes = new Proto.RiderImportColumnType[Rows.Length];
+		}
+		else
+		{
+			FileContent = null;
+			ColumnTypes = null;
+		}
+	}
+
+	private string ValidateSingle(Func<Proto.RiderImportColumnType, bool> filter, string label)
+	{
+		var count = ColumnTypes.Where(filter).Count();
+		if (count == 0)
+		{
+			return $"Колонка с {label} не выбрана";
+		}
+		else if (count > 1)
+		{
+			return $"Колонка с {label} выбрана более одного раза";
+		}
+		return null;
+	}
+
+	private async Task Import()
+	{
+		var errors = new List<string>();
+		// Surname check
+		var err = ValidateSingle(
+			c => c == Proto.RiderImportColumnType.Lastfirstname ||
+				 c == Proto.RiderImportColumnType.Lastname ||
+				 c == Proto.RiderImportColumnType.Firstlastname,
+			"Фамилией");
+		if (err != null) errors.Add(err);
+		// Name check
+		err = ValidateSingle(
+			c => c == Proto.RiderImportColumnType.Lastfirstname ||
+				 c == Proto.RiderImportColumnType.Firstname ||
+				 c == Proto.RiderImportColumnType.Firstlastname,
+			"Именем");
+		if (err != null) errors.Add(err);
+		if (errors.Count > 0)
+		{
+			Error = string.Join("<br/>", errors);
+		}
+		else
+		{
+			IsImporting = true;
+			try
+			{
+				var request = new Proto.ImportRidersRequest
+				{
+					RaceId = RaceId,
+					SkipFirstRow = SkipFirstRow,
+					Content = FileContent,
+				};
+				request.Columns.AddRange(ColumnTypes);
+
+				Result = await raceSvc.ImportRiders(request);
+				Error = null;
+				FileContent = null;
+				Close();
+			}
+			catch (Exception ex)
+			{
+				Error = ex.ToString();
+			}
+			finally
+			{
+				IsImporting = false;
+			}
+		}
 	}
 }

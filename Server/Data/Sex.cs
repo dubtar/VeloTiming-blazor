@@ -25,5 +25,13 @@ namespace VeloTiming.Server.Data
 				sex == Sex.Female ? Proto.Sex.Female :
 				throw new System.NotImplementedException($"Unknown sex '{sex}'");
 		}
+		public static bool Equals(this Proto.Sex one, Sex? two)
+		{
+			return two == null ? one == Proto.Sex.Any :
+				two == Sex.Male ? one == Proto.Sex.Male :
+				two == Sex.Female ? one == Proto.Sex.Male :
+				throw new System.NotImplementedException($"Unknown sex ' {two}'");
+
+		}
 	}
 }

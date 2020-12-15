@@ -14,6 +14,8 @@ namespace VeloTiming.Client.Pages.Races
 		Task DeleteRace(int raceId);
 
 		Task<IList<RaceCategory>> GetRaceCategories(int raceId);
+
+		Task<string> ImportRiders(ImportRidersRequest request);
 	}
 
 	internal class RaceSvc: IRaceSvc
@@ -56,6 +58,12 @@ namespace VeloTiming.Client.Pages.Races
 			var res = await new Proto.RaceCategories.RaceCategoriesClient(channel)
 				.getByRaceAsync(new GetCategoriesByRaceRequest { RaceId = raceId });
 			return res.Categories;
+		}
+
+		public async Task<string> ImportRiders(ImportRidersRequest request)
+		{
+			var res = await Client.importRidersAsync(request);
+			return res.Result;
 		}
 	}
 }

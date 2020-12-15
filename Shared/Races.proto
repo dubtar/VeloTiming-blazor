@@ -17,6 +17,7 @@ service Races {
     rpc getRace (GetRaceRequest) returns (Race);
     rpc updateRace (Race) returns (Race);
     rpc deleteRace (DeleteRaceRequest) returns (google.protobuf.Empty);
+    rpc importRiders(ImportRidersRequest) returns (ImportRidersResponse);
 }
 
 message GetRacesResponse {
@@ -29,4 +30,27 @@ message GetRaceRequest {
 
 message DeleteRaceRequest {
     int32 RaceId = 1;
+}
+
+message ImportRidersRequest {
+    int32 RaceId = 1;
+    bool SkipFirstRow = 2;
+    string Content = 3;
+    repeated RiderImportColumnType Columns = 4;
+}
+
+message ImportRidersResponse {
+    string Result = 1;
+}
+
+enum RiderImportColumnType {
+    SKIP = 0;
+    LASTNAME = 1;
+    FIRSTNAME = 2;
+    LASTFIRSTNAME = 3;
+    FIRSTLASTNAME = 4;
+    SEX = 5;
+    YEAR = 6;
+    CITY = 7;
+    TEAM = 8;
 }
