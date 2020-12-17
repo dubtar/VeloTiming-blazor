@@ -1,5 +1,5 @@
-﻿<div class="modal @modalClass" tabindex="-1" role="dialog" style="display:@modalDisplay; overflow-y: auto;">
-    <div class="modal-dialog modal-lg" role="document">
+﻿<div class="modal @modalClass " tabindex="-1" role="dialog" style="display:@modalDisplay; overflow-y: auto;">
+    <div class="modal-dialog @modalSizeClass modal-dialog-scrollable " role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">@Title</h5>
@@ -32,10 +32,25 @@
     [Parameter]
     public RenderFragment Footer { get; set; }
 
+    [Parameter]
+    public ModalSize Size {get; set;}
+
+    public enum ModalSize { Default, Small, Large, ExtraLarge };
     private string modalDisplay = "none;";
     private string modalClass = "";
     private bool showBackdrop = false;
-
+ 
+    private string modalSizeClass {
+        get {
+            switch (Size) {
+                case ModalSize.Default : return "";
+                case ModalSize.Small : return "modal-sm";
+                case ModalSize.Large: return "modal-lg";
+                case ModalSize: return "modal-xl";
+                default: throw new Exception($"Not implemented modal size: {Size}");
+            }
+        }
+    }
     public void Open()
     {
         modalDisplay = "block;";

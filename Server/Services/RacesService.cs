@@ -87,7 +87,7 @@ namespace VeloTiming.Server.Services
 			foreach (var row in rows)
 			{
 				var items = row.Split(SEPARATOR);
-				Data.Rider rider = new Data.Rider();
+				Data.Rider rider = new Data.Rider() { RaceId = request.RaceId };
 				for (var i = 0; i < columnTypes.Count; i++)
 				{
 					if (items.Length <= i) break;

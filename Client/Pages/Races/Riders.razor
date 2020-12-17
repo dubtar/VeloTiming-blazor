@@ -97,6 +97,7 @@
 				</div>
 			</EditForm>
 		}
+		<ImportRiders @ref="importRiders" RaceId="RaceId" OnImported="@(async () => await LoadRiders())" />
 
 		<table class="table table-striped table-hover table-bordered">
 			<thead>
@@ -138,7 +139,6 @@
 				}
 			</tbody>
 		</table>
-		<ImportRiders @ref="importRiders" />
 	}
 </div>
 
