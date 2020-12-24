@@ -1,0 +1,60 @@
+@inject GrpcChannel channel;
+
+@if (Error != null) {
+    <div class="alert alert-danger">@Error</div>
+}
+@if (Starts == null)
+{
+    <LoadingSpinner />
+}
+else
+{
+    <div class="row">
+        <div class="col">
+            <table class="table table-stripped table-hover table-bordered">
+                <thead>
+                    <tr>
+                        <th>Заезд</th>
+                        <th>Старт</th>
+                        <th>Категории</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var start in Starts)
+                    {
+                        <tr>
+
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    internal Proto.Race Race { get; set; }
+
+    private string Error;
+    private ICollection<Proto.Start> Starts { get; set; }
+
+
+    protected override Task OnInitializedAsync()
+    {
+        try
+        {
+            if (Race == null) throw new ArgumentException("Race is null");
+            var client = new Proto.Starts.StarClient(channel);
+            var response = await client.getByRace(new Proto.GetStartsByRaceRequest{ RaceId = Race.Id });
+            Starts = response.Starts;
+        }
+        catch (Exception ex)
+        {
+            Error = ex.ToString();
+        }
+
+    }
+}

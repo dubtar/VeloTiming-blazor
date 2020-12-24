@@ -15,7 +15,7 @@
 		<h1>Гонка @Race.Name <small>@Race.Date.ToDateTimeOffset().ToString("d")</small></h1>
 		<p class="lead">@Race.Description</p>
 
-		<p>Здесь будут старты</p>
+		<Starts Race="@Race" />
 		<ul class="nav nav-tabs">
 			<li class="nav-item">
 				<a class="nav-link @(CurrentTab == Tab.Categories ? "active" : "")"
