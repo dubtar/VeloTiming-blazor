@@ -8,10 +8,10 @@ namespace VeloTiming.Server.Data
 	{
 		public string Id { get; set; } = Guid.NewGuid().ToString();
 		public DateTime? Time { get; set; }
-		public string TimeSource { get; set; }
-		public string Name { get; set; }
-		public string Number { get; set; }
-		public string NumberSource { get; set; }
+		public string? TimeSource { get; set; }
+		public string? Name { get; set; }
+		public string? Number { get; set; }
+		public string? NumberSource { get; set; }
 		public bool IsIgnored { get; set; }
 		public IList<MarkData> Data { get; set; } = new List<MarkData>();
 		public DateTime CreatedOn { get; private set; }
@@ -20,7 +20,7 @@ namespace VeloTiming.Server.Data
 
 		[ForeignKey("Start")]
 		public int StartId { get; set; }
-		public virtual Start Start { get; set; }
+		public virtual Start Start { get; set; } = null!;
 
 		internal static Result Create(TimeService timeService, int startId)
 		{
@@ -31,11 +31,11 @@ namespace VeloTiming.Server.Data
 	public class MarkData
 	{
 		public DateTime? Time { get; set; }
-		public string Number { get; set; }
-		public string Source { get; set; }
+		public string? Number { get; set; }
+		public string Source { get; set; } = "";
 		public DateTime CreatedOn { get; set; }
 
-		public override bool Equals(object obj)
+		public override bool Equals(object? obj)
 		{
 			if (obj != null && obj is MarkData b)
 			{
@@ -45,7 +45,7 @@ namespace VeloTiming.Server.Data
 		}
 		public override int GetHashCode()
 		{
-			return (Time, Number, Source, CreatedOn).GetHashCode();
+			return HashCode.Combine(Time, Number, Source, CreatedOn);
 		}
 
 		internal MarkData Copy()

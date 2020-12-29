@@ -40,15 +40,15 @@ namespace VeloTiming.Server.Services
 			{
 				race = await dbContext.Races.FindAsync(request.Id);
 				if (race == null) throw new ArgumentException($"Race not found by Id: '{request.Id}");
+				race.Name = request.Name;
+				race.Date = request.Date.ToDateTime();
 			}
 			else
 			{
-				race = new Server.Data.Race();
+				race = new Data.Race(request.Name, request.Date.ToDateTime());
 				dbContext.Races.Add(race);
 			}
-			race.Name = request.Name;
 			race.Description = request.Description;
-			race.Date = request.Date.ToDateTime();
 
 			await dbContext.SaveChangesAsync();
 
@@ -137,6 +137,7 @@ namespace VeloTiming.Server.Services
 					{
 						// determine category
 						rider.Category = race.Categories.FirstOrDefault(cat =>
+							cat != null &&
 							(cat.MinYearOfBirth != null || cat.MaxYearOfBirth != null) // skip categories without years
 							&&
 								(cat.Sex == null || cat.Sex == rider.Sex) &&

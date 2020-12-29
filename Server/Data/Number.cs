@@ -4,6 +4,12 @@ namespace VeloTiming.Server.Data
 {
 	public class Number
 	{
+		public Number(string id, string numberRfids)
+		{
+			Id = id;
+			NumberRfids = numberRfids;
+		}
+
 		[Key, MaxLength(50)]
 		public string Id { get; set; }
 

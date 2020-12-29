@@ -2,6 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>net5.0</TargetFramework>
+		<Nullable>enable</Nullable>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -17,6 +18,7 @@
 		<PackageReference Include="System.Net.Http.Json" Version="5.0.0" />
 	</ItemGroup>
 
+
 	<ItemGroup>
 		<Protobuf Include="..\Shared\Races.proto" GrpcServices="Client" Access="Internal">
 			<Link>Protos\Races.proto</Link>
@@ -29,6 +31,9 @@
 		</Protobuf>
 		<Protobuf Include="..\Shared\RaceCategory.proto" GrpcServices="Client" Access="Internal">
 			<Link>Protos\RaceCategory.proto</Link>
+		</Protobuf>
+		<Protobuf Include="..\Shared\Start.proto" GrpcServices="Client" Access="Internal">
+			<Link>Protos\Start.proto</Link>
 		</Protobuf>
 		<Protobuf Include="..\Shared\Rider.proto" GrpcServices="Client" Access="Internal">
 			<Link>Protos\Rider.proto</Link>

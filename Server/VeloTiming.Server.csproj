@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <UserSecretsId>9b842e97-af56-47a6-97db-97c2b599d142</UserSecretsId>
+	<Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,6 +37,9 @@
     </Protobuf>
     <Protobuf Include="..\Shared\Sex.proto" GrpcServices="Server">
       <Link>Protos\Sex.proto</Link>
+    </Protobuf>
+    <Protobuf Include="..\Shared\Start.proto" GrpcServices="Server">
+      <Link>Protos\Start.proto</Link>
     </Protobuf>
   </ItemGroup>
 

@@ -40,7 +40,7 @@ namespace VeloTiming.Server.Services
 			var number = await dbContext.Numbers.FindAsync(request.Id);
 			if (number == null)
 			{
-				number = new Number() { Id = request.Id };
+				number = new Number(request.Id, "");
 				dbContext.Add(number);
 			}
 			number.NumberRfids = request.Rfids;

@@ -1,0 +1,59 @@
+﻿syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "VeloTiming.Proto";
+
+message Start {
+    int32 Id = 1;
+    string Name = 2;
+    StartType Type = 4;
+    google.protobuf.Timestamp PlannedStart = 5;
+    google.protobuf.Timestamp RealStart = 6;
+    google.protobuf.Timestamp End = 7;
+    repeated Category Categories = 8;
+    int32 DelayMarksAfterStartMinutes = 9;
+    message Category {
+        int32 Id = 1;
+        string Code = 2;
+        string Name = 3;
+    }
+}
+
+enum StartType {
+    START_TYPE_LAPS = 0;
+    START_TYPE_TIME_TRIAL = 1;
+}
+
+service Starts {
+    rpc getByRace (GetStartsByRaceRequest) returns (GetStartsByRaceResponse);
+    rpc get(GetStartRequest) returns (Start);
+    rpc add(AddStartRequest) returns (Start);
+    rpc update(Start) returns(Start);
+    rpc delete(DeleteStartRequest) returns (google.protobuf.Empty);
+}
+
+message GetStartsByRaceRequest
+{
+    int32 RaceId = 1;
+}
+message GetStartsByRaceResponse
+{
+    repeated Start Starts = 1;
+}
+
+message GetStartRequest
+{
+    int32 StartId = 1;
+}
+
+message DeleteStartRequest
+{
+    int32 StartId = 1;
+}
+
+message AddStartRequest {
+    int32 RaceId = 1;
+    Start Start = 2;
+}

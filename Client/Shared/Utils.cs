@@ -16,6 +16,5 @@ namespace VeloTiming.Client
 				sex == Proto.Sex.Female ? "Æåí" :
 				sex.ToString();
 		}
-
 	}
 }

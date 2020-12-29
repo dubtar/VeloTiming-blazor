@@ -35,7 +35,7 @@ namespace VeloTiming.Server.Services
 
 		public override async Task<RaceCategory> add(AddRaceCategoryRequest request, ServerCallContext context)
 		{
-			var raceCategory = new Data.RaceCategory()
+			var raceCategory = new Data.RaceCategory(request.Category.Name, request.Category.Code)
 			{
 				RaceId = request.RaceId
 			};
@@ -58,7 +58,7 @@ namespace VeloTiming.Server.Services
 			return ToProtoRaceCategory(raceCategory);
 		}
 
-		private void UpdateRaceCategory(Data.RaceCategory raceCategory, RaceCategory request)
+		private static void UpdateRaceCategory(Data.RaceCategory raceCategory, RaceCategory request)
 		{
 			raceCategory.Name = request.Name;
 			raceCategory.Code = request.Code;
@@ -79,7 +79,7 @@ namespace VeloTiming.Server.Services
 			return new Empty();
 		}
 
-		private static RaceCategory ToProtoRaceCategory(Data.RaceCategory r)
+		public static RaceCategory ToProtoRaceCategory(Data.RaceCategory r)
 		{
 			return new RaceCategory
 			{

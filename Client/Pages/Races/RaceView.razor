@@ -15,7 +15,7 @@
 		<h1>Гонка @Race.Name <small>@Race.Date.ToDateTimeOffset().ToString("d")</small></h1>
 		<p class="lead">@Race.Description</p>
 
-		<Starts Race="@Race" />
+		<Starts RaceId="@Race.Id" />
 		<ul class="nav nav-tabs">
 			<li class="nav-item">
 				<a class="nav-link @(CurrentTab == Tab.Categories ? "active" : "")"
@@ -44,11 +44,11 @@
 
 @code {
 	[Parameter()]
-	public string ParamRaceId { get; set; }
+	public string? ParamRaceId { get; set; }
 
-	string Error = null;
-	Proto.Race Race = null;
-	IList<Proto.RaceCategory> Categories = null;
+	string? Error = null;
+	Proto.Race? Race = null;
+	IList<Proto.RaceCategory>? Categories = null;
 
 	enum Tab { Categories, Riders }
 	Tab CurrentTab = Tab.Categories;

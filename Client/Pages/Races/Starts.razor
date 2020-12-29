@@ -1,60 +1,58 @@
-@inject GrpcChannel channel;
+@inject IRaceSvc svc
 
-@if (Error != null) {
-    <div class="alert alert-danger">@Error</div>
-}
-@if (Starts == null)
+@if (Error != null)
 {
-    <LoadingSpinner />
+	<div class="alert alert-danger">@Error</div>
+}
+@if (StartsList == null)
+{
+	<LoadingSpinner />
 }
 else
 {
-    <div class="row">
-        <div class="col">
-            <table class="table table-stripped table-hover table-bordered">
-                <thead>
-                    <tr>
-                        <th>Заезд</th>
-                        <th>Старт</th>
-                        <th>Категории</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var start in Starts)
-                    {
-                        <tr>
+	<div class="row">
+		<div class="col">
+			<table class="table table-stripped table-hover table-bordered">
+				<thead>
+					<tr>
+						<th>Заезд</th>
+						<th>Старт</th>
+						<th>Категории</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					@foreach (var start in StartsList)
+					{
+						<tr>
+						</tr>
+					}
+				</tbody>
 
-                        </tr>
-                    }
-                </tbody>
-
-            </table>
-        </div>
-    </div>
+			</table>
+		</div>
+	</div>
 }
 
 @code {
-    [Parameter]
-    internal Proto.Race Race { get; set; }
+	[Parameter]
+	public int RaceId { get; set; }
 
-    private string Error;
-    private ICollection<Proto.Start> Starts { get; set; }
+	private string? Error;
+	private ICollection<Proto.Start>? StartsList { get; set; }
 
 
-    protected override Task OnInitializedAsync()
-    {
-        try
-        {
-            if (Race == null) throw new ArgumentException("Race is null");
-            var client = new Proto.Starts.StarClient(channel);
-            var response = await client.getByRace(new Proto.GetStartsByRaceRequest{ RaceId = Race.Id });
-            Starts = response.Starts;
-        }
-        catch (Exception ex)
-        {
-            Error = ex.ToString();
-        }
+	protected override async Task OnInitializedAsync()
+	{
+		try
+		{
+			if (RaceId <= 0) throw new ArgumentException("RaceId incorrect");
+			StartsList = await svc.GetStartsAsync(RaceId);
+		}
+		catch (Exception ex)
+		{
+			Error = ex.ToString();
+		}
 
-    }
+	}
 }

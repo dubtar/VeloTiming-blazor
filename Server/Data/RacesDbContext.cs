@@ -11,18 +11,18 @@ namespace VeloTiming.Server.Data
 	public class RacesDbContext : DbContext
 	{
 		public RacesDbContext(DbContextOptions<RacesDbContext> options) : base(options) { }
-		public DbSet<Race> Races { get; set; }
-		public DbSet<Number> Numbers { get; set; }
-		public DbSet<RaceCategory> RaceCategories { get; set; }
-		public DbSet<Rider> Riders { get; set; }
-		public DbSet<Start> Starts { get; set; }
-		public DbSet<Result> Results { get; set; }
+		public DbSet<Race> Races => Set<Race>();
+		public DbSet<Number> Numbers => Set<Number>();
+		public DbSet<RaceCategory> RaceCategories => Set<RaceCategory>();
+		public DbSet<Rider> Riders => Set<Rider>();
+		public DbSet<Start> Starts => Set<Start>();
+		public DbSet<Result> Results => Set<Result>();
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 			modelBuilder.Entity<Result>().Property(m => m.Data).HasConversion(
 				v => JsonSerializer.Serialize(v, new JsonSerializerOptions { IgnoreNullValues = true }),
-				v => JsonSerializer.Deserialize<IList<MarkData>>(v, new JsonSerializerOptions { IgnoreNullValues = true })
+				v => JsonSerializer.Deserialize<IList<MarkData>>(v, new JsonSerializerOptions { IgnoreNullValues = true }) ?? new List<MarkData>()
 			).Metadata.SetValueComparer(new ValueComparer<IList<MarkData>>(
 				(c1, c2) => c1.SequenceEqual(c2),
 				c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
