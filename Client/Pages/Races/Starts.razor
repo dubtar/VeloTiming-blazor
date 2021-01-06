@@ -1,3 +1,4 @@
+@using System.ComponentModel.DataAnnotations
 @inject IRaceSvc svc
 
 @if (Error != null)
@@ -22,14 +23,96 @@ else
 					</tr>
 				</thead>
 				<tbody>
-					@foreach (var start in StartsList)
+					@foreach (var cs in StartsList)
 					{
-						<tr>
+						var start = cs;
+						<tr @key="start.Id">
+							<td>@start.Name</td>
+							<td>@Utils.FormatTime(start.PlannedStart)</td>
+							<td>@string.Join(", ", start.Categories.Select(c => c.Name))</td>
+							<td>
+								<div class="btn-group">
+									@if (start.RealStart == null)
+									{
+										<button class="btn btn-success" @onclick="@(() => Start(start.Id))">Начать</button>
+									}
+									else
+									{
+										<NavLink class="btn btn-outline-success" href="results/@(start.Id)">Результаты</NavLink>
+									}
+									<button class="btn btn-outline-primary" @onclick="@(() => EditStart(start))">Изменить</button>
+									<button @onclick="@(() => DeleteStart(start.Id))" class="btn btn-outline-danger">Удалить</button>
+								</div>
+							</td>
 						</tr>
 					}
 				</tbody>
 
 			</table>
+			@if (EditModel == null)
+			{
+				<button class="btn btn-outline-primary" @onclick="@(() => EditStart(null))">Добавить заезд</button>
+			}
+			else
+			{
+				<EditForm Model="@EditModel" OnValidSubmit="@SaveStart" class="bg-light p-3">
+					<DataAnnotationsValidator />
+					@if (EditModel.Id > 0)
+					{
+						<h3>Изменение заезда</h3>
+					}
+					else
+					{
+						<h3>Добавление заезда</h3>
+					}
+					<div class="form-row">
+						<div class="form-group col-2">
+							<label for="name">Название</label>
+							<InputText Name="name" @bind-Value="EditModel.Name" class="form-control" DisplayName="Название" />
+							<ValidationMessage For="@(() => EditModel.Name)" />
+						</div>
+						<div class="form-group col-2">
+							<label for="plannedStart">Время старта</label>
+							<InputText type="time" @bind-Value="EditModel.PlannedStartString" class="form-control" DisplayName="Время старта" />
+						</div>
+						<div class="form-group col-2">
+							<label for="startType">Тип</label>
+							<div>
+								<InputRadioGroup id="startType" @bind-Value="EditModel.StartType">
+									<div class="form-check form-check-inline">
+										<InputRadio id="laps" Value="Proto.StartType.Laps" class="form-check-input"></InputRadio>
+										<label class="form-check-label" for="laps">Групповая гонка</label>
+									</div>
+									<div class="form-check form-check-inline">
+										<InputRadio Value="Proto.StartType.TimeTrial" id="timeTrial" class="form-check-input" />
+										<label class="form-check-label" for="timeTrial">Раздельный старт</label>
+									</div>
+								</InputRadioGroup>
+							</div>
+							<ValidationMessage For="@(() => EditModel.StartType)" />
+						</div>
+						@if (EditModel.StartType == Proto.StartType.Laps)
+						{
+							<div class="form-group col-1">
+								<label for="delayMarksAfterStart" title="Сколько минут не добавлять результаты после старта">Задержка отсечек</label>
+								<InputNumber @bind-Value="EditModel.DelayMarksAfterStartMinutes" class="form-control" DisplayName="Задержка" />
+								<ValidationMessage For="@(() => EditModel.DelayMarksAfterStartMinutes)" />
+							</div>
+						}
+						<div class="form-group col-1">
+							<label for="categories">Категории</label>
+							<div>
+								@foreach (var cat in RaceCategories ?? new List<Proto.RaceCategory>())
+								{
+									<div class="form-check form-check-inline">
+										<InputCheckbox 
+									</div>
+								}
+							</div>
+						</div>
+					</div>
+				</EditForm>
+			}
 		</div>
 	</div>
 }
@@ -38,8 +121,12 @@ else
 	[Parameter]
 	public int RaceId { get; set; }
 
+	[Parameter]
+	public DateTime RaceDate { get; set; }
+
 	private string? Error;
 	private ICollection<Proto.Start>? StartsList { get; set; }
+	private ICollection<Proto.RaceCategory>? RaceCategories { get; set; }
 
 
 	protected override async Task OnInitializedAsync()
@@ -47,12 +134,69 @@ else
 		try
 		{
 			if (RaceId <= 0) throw new ArgumentException("RaceId incorrect");
-			StartsList = await svc.GetStartsAsync(RaceId);
+			var startsCall = svc.GetStartsAsync(RaceId);
+			var catsCall = svc.GetRaceCategories(RaceId);
+			StartsList = await startsCall;
+			RaceCategories = await catsCall;
 		}
 		catch (Exception ex)
 		{
 			Error = ex.ToString();
 		}
+	}
 
+	private void EditStart(Proto.Start? start)
+	{
+		// TODO
+	}
+
+	private void DeleteStart(int startId)
+	{ // TODO
+	}
+
+	private void Start(int startId)
+	{
+		// TODO
+	}
+
+	private StartEditModel? EditModel;
+
+	private class StartEditModel
+	{
+		private DateTime raceDate;
+		public StartEditModel(DateTime raceDate)
+		{
+			this.raceDate = raceDate;
+		}
+
+		public int Id { get; set; }
+
+		[Required(ErrorMessage = "Название обязательно")]
+		public string Name { get; set; } = "";
+
+		public DateTime? PlannedStart { get; set; }
+		public string PlannedStartString
+		{
+			get
+			{
+				return PlannedStart?.ToString("hh:mm") ?? string.Empty;
+			}
+			set
+			{
+				if (TimeSpan.TryParse(value, out var timeSpan))
+				{
+					PlannedStart = raceDate.Date.Add(timeSpan);
+				}
+				else
+				{
+					PlannedStart = null;
+				}
+			}
+		}
+
+		public Proto.StartType StartType { get; set; } = Proto.StartType.Laps;
+
+		[Range(0, int.MaxValue, ErrorMessage = "Должно быть неотрицательное число")]
+		public int? DelayMarksAfterStartMinutes { get; set; }
 	}
 }

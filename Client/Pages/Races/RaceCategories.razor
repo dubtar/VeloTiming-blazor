@@ -112,8 +112,8 @@ else
 	[Parameter]
 	public int RaceId { get; set; }
 
-	ICollection<Proto.RaceCategory> Categories;
-	string Error;
+	ICollection<Proto.RaceCategory>? Categories;
+	string? Error;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -199,17 +199,17 @@ else
 			Error = ex.ToString();
 		}
 	}
-	RaceCategoryEditModel EditModel;
+	RaceCategoryEditModel? EditModel;
 
 	class RaceCategoryEditModel
 	{
 		public int Id { get; set; }
 
 		[Required(ErrorMessage = "Код обязателен"), StringLength(3, ErrorMessage = "Максимум 3 символа")]
-		public string Code { get; set; }
+		public string Code { get; set; } = "";
 
 		[Required(ErrorMessage = "Название обязательно")]
-		public string Name { get; set; }
+		public string Name { get; set; } = "";
 
 		public Proto.Sex Sex { get; set; }
 

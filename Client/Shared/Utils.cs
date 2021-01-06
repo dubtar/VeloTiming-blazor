@@ -9,6 +9,12 @@ namespace VeloTiming.Client
 			if (time == null) return string.Empty;
 			return time.ToDateTime().ToShortDateString();
 		}
+
+		internal static string FormatTime(Timestamp time)
+		{
+			if (time == null) return string.Empty;
+			return time.ToDateTime().ToLocalTime().ToShortTimeString();
+		}
 		internal static string FormatSex(Proto.Sex sex, bool anyAsEmpty = false)
 		{
 			return sex == Proto.Sex.Any ? (anyAsEmpty ? "" : "Ыўсющ") :
