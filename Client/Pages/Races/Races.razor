@@ -53,8 +53,8 @@
 	<NavLink class="btn btn-primary" href=@($"/races/edit")>Добавить гонку</NavLink>
 </div>
 @code {
-	private static ICollection<VeloTiming.Proto.Race> races;
-	private string error = null;
+	private static ICollection<VeloTiming.Proto.Race>? races;
+	private string? error;
 
 	protected override async Task OnInitializedAsync()
 	{

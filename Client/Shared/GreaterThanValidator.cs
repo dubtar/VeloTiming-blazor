@@ -12,7 +12,7 @@ namespace VeloTiming.Client.Shared
 		}
 
 		public string OtherFieldName { get; set; }
-		protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+		protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
 		{
 			if (value == null)
 				return ValidationResult.Success;
@@ -25,7 +25,7 @@ namespace VeloTiming.Client.Shared
 				return ValidationResult.Success; //other property is null
 
 			if (Convert.ToDouble(value) < Convert.ToDouble(val))
-				return new ValidationResult(ErrorMessage, new[] { validationContext.MemberName });
+				return new ValidationResult(ErrorMessage, new[] { validationContext.MemberName! });
 
 			return ValidationResult.Success;
 		}

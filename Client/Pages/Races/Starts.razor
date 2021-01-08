@@ -11,7 +11,7 @@
 }
 else
 {
-	<div class="row">
+	<div class="row pb-3">
 		<div class="col">
 			<table class="table table-stripped table-hover table-bordered">
 				<thead>
@@ -38,7 +38,7 @@ else
 									}
 									else
 									{
-										<NavLink class="btn btn-outline-success" href="results/@(start.Id)">Результаты</NavLink>
+										<NavLink class="btn btn-outline-success" href="@($"results/{start.Id}")">Результаты</NavLink>
 									}
 									<button class="btn btn-outline-primary" @onclick="@(() => EditStart(start))">Изменить</button>
 									<button @onclick="@(() => DeleteStart(start.Id))" class="btn btn-outline-danger">Удалить</button>
@@ -102,14 +102,20 @@ else
 						<div class="form-group col-1">
 							<label for="categories">Категории</label>
 							<div>
-								@foreach (var cat in RaceCategories ?? new List<Proto.RaceCategory>())
+								@foreach(var cat in EditModel.Categories)
 								{
+									var category = cat;
 									<div class="form-check form-check-inline">
-										<InputCheckbox 
+										<InputCheckbox @bind-Value="category.Selected" id="@($"category{category.Id}")" class="form-check-input" />
+										<label for="category@(category.Id)" class="form-check-label">@category.Name</label>
 									</div>
 								}
 							</div>
 						</div>
+					</div>
+					<div class="form-row">
+						<button class="btn btn-primary" type="submit">@($"{(EditModel.Id == 0 ? "Добавить" : "Сохранить")} заезд") </button>
+						<button class="btn btn-secondary ml-3" type="reset">Отмена</button>
 					</div>
 				</EditForm>
 			}
@@ -118,11 +124,11 @@ else
 }
 
 @code {
-	[Parameter]
-	public int RaceId { get; set; }
+		[Parameter]
+		public int RaceId { get; set; }
 
-	[Parameter]
-	public DateTime RaceDate { get; set; }
+		[Parameter]
+		public DateTime RaceDate { get; set; }
 
 	private string? Error;
 	private ICollection<Proto.Start>? StartsList { get; set; }
@@ -147,7 +153,8 @@ else
 
 	private void EditStart(Proto.Start? start)
 	{
-		// TODO
+		if (RaceCategories != null)
+			EditModel = new StartEditModel(RaceDate, RaceCategories, start?.Categories.Select(c => c.Id));
 	}
 
 	private void DeleteStart(int startId)
@@ -159,15 +166,36 @@ else
 		// TODO
 	}
 
+	private void SaveStart()
+	{
+		// TODO
+	}
+
 	private StartEditModel? EditModel;
 
 	private class StartEditModel
 	{
-		private DateTime raceDate;
-		public StartEditModel(DateTime raceDate)
+
+		public class Category
+		{
+			public Category(int id, string name, bool selected)
+			{
+				Id = id;
+				Name = name;
+				Selected = selected;
+			}
+			public int Id { get; set; }
+			public string Name { get; set; }
+			public bool Selected { get; set; }
+		}
+
+		public StartEditModel(DateTime raceDate, IEnumerable<Proto.RaceCategory> allCategories, IEnumerable<int>? currentCategories)
 		{
 			this.raceDate = raceDate;
+			this.Categories = allCategories.Select(c => new Category(c.Id, c.Name, currentCategories?.Any(cc => cc == c.Id) ?? false)).ToArray();
 		}
+
+		private DateTime raceDate;
 
 		public int Id { get; set; }
 
@@ -194,9 +222,11 @@ else
 			}
 		}
 
-		public Proto.StartType StartType { get; set; } = Proto.StartType.Laps;
+		public Proto.StartType StartType { get; set; }
 
 		[Range(0, int.MaxValue, ErrorMessage = "Должно быть неотрицательное число")]
 		public int? DelayMarksAfterStartMinutes { get; set; }
+
+		public Category[] Categories { get; set; }
 	}
 }

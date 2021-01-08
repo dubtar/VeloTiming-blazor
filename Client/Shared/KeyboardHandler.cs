@@ -6,7 +6,7 @@ namespace VeloTiming.Client.Shared
 {
 	public static class KeyboardHandler
 	{
-		public static event EventHandler<KeyboardEvent> OnDocumentKeyDown;
+		public static event EventHandler<KeyboardEvent>? OnDocumentKeyDown;
 
 		[JSInvokable]
 		public static void DocumentKeyDown(KeyboardEvent args)
@@ -17,6 +17,6 @@ namespace VeloTiming.Client.Shared
 
 	public class KeyboardEvent
 	{
-		public string Key { get; set; }
+		public string? Key { get; set; }
 	}
 }

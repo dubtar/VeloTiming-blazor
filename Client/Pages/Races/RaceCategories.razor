@@ -140,13 +140,13 @@ else
 		StateHasChanged();
 	}
 
-	void EditCategory(Proto.RaceCategory category)
+	void EditCategory(Proto.RaceCategory? category)
 	{
 		EditModel = new RaceCategoryEditModel
 		{
 			Id = category?.Id ?? 0,
-			Name = category?.Name,
-			Code = category?.Code,
+			Name = category?.Name ?? "",
+			Code = category?.Code ?? "",
 			MaxYearOfBirth = category?.MaxYearOfBirth,
 			MinYearOfBirth = category?.MinYearOfBirth,
 			Sex = category?.Sex ?? Proto.Sex.Any
@@ -172,6 +172,7 @@ else
 	{
 		try
 		{
+			if (EditModel == null) throw new ArgumentNullException("Model is null");
 			var category = new Proto.RaceCategory
 			{
 				Code = EditModel.Code,

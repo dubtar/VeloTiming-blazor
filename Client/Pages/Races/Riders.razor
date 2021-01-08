@@ -74,9 +74,12 @@
 						<label for="category">Категория</label>
 						<InputSelect @bind-Value="EditModel.Category" class="form-control">
 							<option value=""></option>
-							@foreach (var cat in Categories)
+							@if (Categories != null)
 									{
-								<option @key="cat.Id" value="@cat.Code">@cat.Name</option>
+								@foreach (var cat in Categories)
+										{
+									<option @key="cat.Id" value="@cat.Code">@cat.Name</option>
+										}
 									}
 						</InputSelect>
 					</div>
@@ -147,10 +150,10 @@
 	public int RaceId { get; set; }
 
 
-	IList<Proto.Rider> RidersList;
-	IList<Proto.RaceCategory> Categories;
-	string Error;
-	ImportRiders importRiders;
+	IList<Proto.Rider>? RidersList;
+	IList<Proto.RaceCategory>? Categories;
+	string? Error;
+	ImportRiders? importRiders;
 
 	//TODO: subscribe to rfid signalR and set number for edited rider
 	protected override async Task OnInitializedAsync()
@@ -189,7 +192,7 @@
 		StateHasChanged();
 	}
 
-	private void EditRider(Proto.Rider rider)
+	private void EditRider(Proto.Rider? rider)
 	{
 		EditModel = new RiderEditModel
 		{
@@ -224,6 +227,7 @@
 	{
 		try
 		{
+			if (EditModel == null) throw new ArgumentNullException("EditModel is null");
 			var rider = new Proto.Rider
 			{
 				Id = EditModel.Id,
@@ -255,7 +259,7 @@
 		}
 	}
 
-	RiderEditModel EditModel;
+	RiderEditModel? EditModel;
 
 	class RiderEditModel
 	{
@@ -264,14 +268,14 @@
 		public string Number { get; set; } = "";
 
 		[Required(ErrorMessage = "Имя обязательно")]
-		public string FirstName { get; set; }
+		public string FirstName { get; set; } = "";
 
 		[Required(ErrorMessage = "Фамилия обязательна")]
-		public string LastName { get; set; }
+		public string LastName { get; set; } = "";
 
 		public Proto.Sex Sex { get; set; }
 
-		public event EventHandler OnYearChange;
+		public event EventHandler? OnYearChange;
 		private int? yearOfBirth;
 		[YearRange(1900, ErrorMessage = "Год рождения некорректный")]
 		public int? YearOfBirth
@@ -280,7 +284,7 @@
 			{
 				return yearOfBirth;
 			}
-			set { yearOfBirth = value; OnYearChange?.Invoke(this, null); }
+			set { yearOfBirth = value; OnYearChange?.Invoke(this, new EventArgs()); }
 		}
 
 		public string Category { get; set; } = "";
@@ -288,7 +292,7 @@
 		public string Team { get; set; } = "";
 	}
 
-	private void OnYearChange(object _, EventArgs __)
+	private void OnYearChange(object? _, EventArgs __)
 	{
 		if (EditModel == null || !string.IsNullOrEmpty(EditModel.Category) ||
 			EditModel.YearOfBirth == null || EditModel.YearOfBirth < 1900 ||
@@ -307,7 +311,7 @@
 		}
 	}
 
-	private void OnKeyDown(object _, KeyboardEvent args)
+	private void OnKeyDown(object? _, KeyboardEvent args)
 	{
 		if (args.Key == "Insert" && RidersList != null && EditModel == null)
 		{
@@ -317,6 +321,6 @@
 	}
 	private void ShowImport()
 	{
-		importRiders.Show();
+		importRiders?.Show();
 	}
 }

@@ -50,10 +50,11 @@
 
 @code {
 	[Parameter]
-	public string ParamRaceId { get; set; }
-	private RaceEditModel Model;
+	public string? ParamRaceId { get; set; }
+
+	private RaceEditModel? Model;
 	private bool IsUpdating = false;
-	private string Error;
+	private string? Error;
 
 	protected int? RaceId
 	{
@@ -100,6 +101,7 @@
 
 		try
 		{
+			if (Model == null) throw new ArgumentNullException("Model is null");
 			IsUpdating = true;
 			await Task.Delay(1000); // TODO: remove
 
@@ -134,9 +136,9 @@
 
 		[Required(ErrorMessage = "Название обязательно")]
 		[StringLength(50, ErrorMessage = "Слишком длинное")]
-		public string Name { get; set; }
+		public string Name { get; set; } = "";
 
-		public string Description { get; set; }
+		public string Description { get; set; } = "";
 		[Required]
 		public DateTimeOffset Date { get; set; }
 	}

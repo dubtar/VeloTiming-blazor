@@ -89,17 +89,18 @@
 @code {
 	string NumberInRange = "";
 	bool IsSaving = false;
-	string Error = null;
-	ICollection<Proto.Number> AllNumbers = null;
+	string? Error = null;
+	ICollection<Proto.Number>? AllNumbers = null;
 	string Filter = "";
+
 	class NumberEditModel
 	{
 		[Required(ErrorMessage = "Номер обязателен"), StringLength(50)]
-		public string Number { get; set; }
+		public string Number { get; set; } = "";
 		[Required(ErrorMessage = "Rfid обязательны")]
-		public string Rfids { get; set; }
+		public string Rfids { get; set; } = "";
 	}
-	NumberEditModel EditModel;
+	NumberEditModel? EditModel;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -156,6 +157,7 @@
 	{
 		try
 		{
+			if (EditModel == null) throw new ArgumentNullException("Model is null");
 			IsSaving = true;
 			var client = new Proto.Numbers.NumbersClient(channel);
 			var request = new Proto.Number { Id = EditModel.Number, Rfids = EditModel.Rfids };
