@@ -93,16 +93,16 @@ else
 						</div>
 						@if (EditModel.StartType == Proto.StartType.Laps)
 						{
-							<div class="form-group col-1">
-								<label for="delayMarksAfterStart" title="Сколько минут не добавлять результаты после старта">Задержка отсечек</label>
+							<div class="form-group col-2">
+								<label for="delayMarksAfterStart" title="Сколько минут не добавлять результаты после старта">Задержка отм.(мин)</label>
 								<InputNumber @bind-Value="EditModel.DelayMarksAfterStartMinutes" class="form-control" DisplayName="Задержка" />
 								<ValidationMessage For="@(() => EditModel.DelayMarksAfterStartMinutes)" />
 							</div>
 						}
-						<div class="form-group col-1">
+						<div class="form-group col-4">
 							<label for="categories">Категории</label>
 							<div>
-								@foreach(var cat in EditModel.Categories)
+								@foreach (var cat in EditModel.Categories)
 								{
 									var category = cat;
 									<div class="form-check form-check-inline">
@@ -124,11 +124,11 @@ else
 }
 
 @code {
-		[Parameter]
-		public int RaceId { get; set; }
+	[Parameter]
+	public int RaceId { get; set; }
 
-		[Parameter]
-		public DateTime RaceDate { get; set; }
+	[Parameter]
+	public DateTime RaceDate { get; set; }
 
 	private string? Error;
 	private ICollection<Proto.Start>? StartsList { get; set; }
@@ -137,6 +137,11 @@ else
 
 	protected override async Task OnInitializedAsync()
 	{
+		await LoadStarts();
+	}
+
+	private async Task LoadStarts()
+	{
 		try
 		{
 			if (RaceId <= 0) throw new ArgumentException("RaceId incorrect");
@@ -144,6 +149,7 @@ else
 			var catsCall = svc.GetRaceCategories(RaceId);
 			StartsList = await startsCall;
 			RaceCategories = await catsCall;
+			StateHasChanged();
 		}
 		catch (Exception ex)
 		{
@@ -154,11 +160,20 @@ else
 	private void EditStart(Proto.Start? start)
 	{
 		if (RaceCategories != null)
-			EditModel = new StartEditModel(RaceDate, RaceCategories, start?.Categories.Select(c => c.Id));
+			EditModel = new StartEditModel(RaceDate, RaceCategories, start);
 	}
 
-	private void DeleteStart(int startId)
-	{ // TODO
+	private async Task DeleteStart(int startId)
+	{
+		try
+		{
+			await svc.DeleteStartAsync(startId);
+			await LoadStarts();
+		}
+		catch(Exception ex)
+		{
+			Error = ex.ToString();
+		}
 	}
 
 	private void Start(int startId)
@@ -166,9 +181,29 @@ else
 		// TODO
 	}
 
-	private void SaveStart()
+	private async Task SaveStart()
 	{
-		// TODO
+		if (EditModel == null) return;
+		try
+		{
+			var start = new Proto.Start
+			{
+				DelayMarksAfterStartMinutes = EditModel.DelayMarksAfterStartMinutes ?? 0,
+				Id = EditModel.Id,
+				Name = EditModel.Name,
+				Type = EditModel.StartType,
+				PlannedStart = EditModel.PlannedStart.HasValue ?
+					Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(EditModel.PlannedStart.Value) :
+					null
+			};
+
+			await LoadStarts();
+			EditModel = null;
+		}
+		catch (Exception ex)
+		{
+			Error = ex.ToString();
+		}
 	}
 
 	private StartEditModel? EditModel;
@@ -189,10 +224,18 @@ else
 			public bool Selected { get; set; }
 		}
 
-		public StartEditModel(DateTime raceDate, IEnumerable<Proto.RaceCategory> allCategories, IEnumerable<int>? currentCategories)
+		public StartEditModel(DateTime raceDate, IEnumerable<Proto.RaceCategory> allCategories, Proto.Start? start)
 		{
 			this.raceDate = raceDate;
-			this.Categories = allCategories.Select(c => new Category(c.Id, c.Name, currentCategories?.Any(cc => cc == c.Id) ?? false)).ToArray();
+			var currentCategories = start?.Categories.Select(c => c.Id).ToArray();
+			if (start != null)
+			{
+				Name = start.Name;
+				PlannedStart = start.PlannedStart.ToDateTime().ToLocalTime();
+				StartType = start.Type;
+				DelayMarksAfterStartMinutes = start.DelayMarksAfterStartMinutes <= 0 ? null : start.DelayMarksAfterStartMinutes;
+			}
+			Categories = allCategories.Select(c => new Category(c.Id, c.Name, currentCategories?.Any(cc => cc == c.Id) ?? false)).ToArray();
 		}
 
 		private DateTime raceDate;
