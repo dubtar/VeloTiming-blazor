@@ -28,7 +28,7 @@ else
 						var start = cs;
 						<tr @key="start.Id">
 							<td>@start.Name</td>
-							<td>@Utils.FormatTime(start.PlannedStart)</td>
+							<td>@start.PlannedStart?.ToDiagnosticString() <br/> @Utils.FormatTime(start.PlannedStart)</td>
 							<td>@string.Join(", ", start.Categories.Select(c => c.Name))</td>
 							<td>
 								<div class="btn-group">
@@ -114,8 +114,8 @@ else
 						</div>
 					</div>
 					<div class="form-row">
-						<button class="btn btn-primary" type="submit">@($"{(EditModel.Id == 0 ? "Добавить" : "Сохранить")} заезд") </button>
-						<button class="btn btn-secondary ml-3" type="reset">Отмена</button>
+						<button class="btn btn-primary" type="submit" disabled="@EditModel.IsSaving">@($"{(EditModel.Id == 0 ? "Добавить" : "Сохранить")} заезд") </button>
+						<button class="btn btn-secondary ml-3" type="reset" disabled="@EditModel.IsSaving" @onclick="@(()=> EditModel = null)">Отмена</button>
 					</div>
 				</EditForm>
 			}
@@ -145,7 +145,7 @@ else
 		try
 		{
 			if (RaceId <= 0) throw new ArgumentException("RaceId incorrect");
-			var startsCall = svc.GetStartsAsync(RaceId);
+			var startsCall = svc.GetStarts(RaceId);
 			var catsCall = svc.GetRaceCategories(RaceId);
 			StartsList = await startsCall;
 			RaceCategories = await catsCall;
@@ -167,7 +167,7 @@ else
 	{
 		try
 		{
-			await svc.DeleteStartAsync(startId);
+			await svc.DeleteStart(startId);
 			await LoadStarts();
 		}
 		catch(Exception ex)
@@ -186,6 +186,7 @@ else
 		if (EditModel == null) return;
 		try
 		{
+			EditModel.IsSaving = true;
 			var start = new Proto.Start
 			{
 				DelayMarksAfterStartMinutes = EditModel.DelayMarksAfterStartMinutes ?? 0,
@@ -193,9 +194,13 @@ else
 				Name = EditModel.Name,
 				Type = EditModel.StartType,
 				PlannedStart = EditModel.PlannedStart.HasValue ?
-					Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(EditModel.PlannedStart.Value) :
+					Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(EditModel.PlannedStart.Value.ToUniversalTime()) :
 					null
 			};
+			if (start.Id == 0)
+				await svc.AddStart(RaceId, start);
+			else
+				await svc.UpdateStart(start);
 
 			await LoadStarts();
 			EditModel = null;
@@ -203,6 +208,7 @@ else
 		catch (Exception ex)
 		{
 			Error = ex.ToString();
+			if (EditModel != null) EditModel.IsSaving = false;
 		}
 	}
 
@@ -230,8 +236,9 @@ else
 			var currentCategories = start?.Categories.Select(c => c.Id).ToArray();
 			if (start != null)
 			{
+				Id = start.Id;
 				Name = start.Name;
-				PlannedStart = start.PlannedStart.ToDateTime().ToLocalTime();
+				PlannedStart = start.PlannedStart?.ToDateTime().ToLocalTime();
 				StartType = start.Type;
 				DelayMarksAfterStartMinutes = start.DelayMarksAfterStartMinutes <= 0 ? null : start.DelayMarksAfterStartMinutes;
 			}
@@ -271,5 +278,7 @@ else
 		public int? DelayMarksAfterStartMinutes { get; set; }
 
 		public Category[] Categories { get; set; }
+
+		public bool IsSaving { get; set; }
 	}
 }

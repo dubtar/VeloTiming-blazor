@@ -4,13 +4,13 @@ namespace VeloTiming.Client
 {
 	internal static class Utils
 	{
-		internal static string FormatDate(Timestamp time)
+		internal static string FormatDate(Timestamp? time)
 		{
 			if (time == null) return string.Empty;
 			return time.ToDateTime().ToShortDateString();
 		}
 
-		internal static string FormatTime(Timestamp time)
+		internal static string FormatTime(Timestamp? time)
 		{
 			if (time == null) return string.Empty;
 			return time.ToDateTime().ToLocalTime().ToShortTimeString();

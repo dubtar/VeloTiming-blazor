@@ -16,8 +16,10 @@ namespace VeloTiming.Client.Pages.Races
 		Task<IList<RaceCategory>> GetRaceCategories(int raceId);
 
 		Task<string> ImportRiders(ImportRidersRequest request);
-		Task<IList<Start>> GetStartsAsync(int raceId);
-		Task DeleteStartAsync(int startId);
+		Task<IList<Start>> GetStarts(int raceId);
+		Task DeleteStart(int startId);
+		Task<Start> AddStart(int raceId, Start start);
+		Task<Start> UpdateStart(Start start);
 	}
 
 	internal class RaceSvc: IRaceSvc
@@ -74,22 +76,22 @@ namespace VeloTiming.Client.Pages.Races
 		private Proto.Starts.StartsClient StartsClient =>
 			_startsClient ??= new Proto.Starts.StartsClient(channel);
 
-		public async Task<IList<Start>> GetStartsAsync(int raceId)
+		public async Task<IList<Start>> GetStarts(int raceId)
 		{
 			var res = await StartsClient.getByRaceAsync(new GetStartsByRaceRequest { RaceId = raceId });
 			return res.Starts;
 		}
 
-		public async Task DeleteStartAsync(int startId)
+		public async Task DeleteStart(int startId)
 		{
 			await StartsClient.deleteAsync(new DeleteStartRequest { StartId = startId });
 		}
 
-		public async Task<Start> UpdateStartAsync(Start start)
+		public async Task<Start> UpdateStart(Start start)
 		{
 			return await StartsClient.updateAsync(start);
 		}
-		public async Task<Start> AddStartAsync(Start start, int raceId)
+		public async Task<Start> AddStart(int raceId, Start start)
 		{
 			return await StartsClient.addAsync(new AddStartRequest { RaceId = raceId, Start = start });
 		}
