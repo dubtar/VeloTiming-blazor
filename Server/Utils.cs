@@ -10,7 +10,9 @@ namespace VeloTiming.Server
 		internal static Timestamp? ToTimestamp(this DateTime? date)
 		{
 			if (date == null) return null;
-			return Timestamp.FromDateTime(DateTime.SpecifyKind(date.Value, DateTimeKind.Utc));
+			if (date.Value.Kind == DateTimeKind.Unspecified)
+				date = DateTime.SpecifyKind(date.Value, DateTimeKind.Utc);
+			return Timestamp.FromDateTime(date.Value.ToUniversalTime());
 		}
 
 		internal static Proto.StartType ToProto(this Data.StartType type)

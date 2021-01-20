@@ -16,7 +16,7 @@ namespace VeloTiming.Server.Data
 		public int RaceId { get; set; }
 		[ForeignKey("RaceId")]
 		public virtual Race Race { get; set; } = null!;
-		public virtual ICollection<StartCategory> Categories { get; set; } = Array.Empty<StartCategory>();
+		public virtual ICollection<StartCategory> Categories { get; set; } = new List<StartCategory>();
 		public bool IsActive { get; set; }
 		public int DelayMarksAfterStartMinutes { get; set; }
 		public StartType Type { get; set; }

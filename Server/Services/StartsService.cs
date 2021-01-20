@@ -19,7 +19,9 @@ namespace VeloTiming.Server.Services
 		public override async Task<GetStartsByRaceResponse> getByRace(GetStartsByRaceRequest request, ServerCallContext context)
 		{
 
-			var starts = await dbContext.Starts.Include(s => s.Categories).Where(c => c.RaceId == request.RaceId).ToListAsync();
+			var starts = await dbContext.Starts
+				.Include(s => s.Categories).ThenInclude(c => c.Category)
+				.Where(c => c.RaceId == request.RaceId).ToListAsync();
 
 			var response = new GetStartsByRaceResponse();
 			response.Starts.AddRange(starts.Select(ToProtoStart));
@@ -40,6 +42,26 @@ namespace VeloTiming.Server.Services
 			return ToProtoStart(start);
 		}
 
+		public override async Task<Start> update(Start request, ServerCallContext context)
+		{
+			var start = await dbContext.Starts.FindAsync(request.Id);
+			if (start == null)
+				throw new Exception($"Start not found by Id {request.Id}");
+			UpdateStart(start, request);
+			await dbContext.SaveChangesAsync();
+			return ToProtoStart(start);
+		}
+
+		public override async Task<Empty> delete(DeleteStartRequest request, ServerCallContext context)
+		{
+			var start = await dbContext.Starts.FindAsync(request.StartId);
+			if (start == null)
+				throw new Exception($"Start not found by Id {request.StartId}");
+			dbContext.Remove(start);
+			await dbContext.SaveChangesAsync();
+			return new Empty();
+		}
+
 		private void UpdateStart(Data.Start entity, Start model)
 		{
 			// update only properties edited in form
@@ -47,7 +69,9 @@ namespace VeloTiming.Server.Services
 			entity.Name = model.Name;
 			entity.PlannedStart = model.PlannedStart?.ToDateTime();
 			entity.Type = model.Type.FromProto();
-			Utils.UpdateCollection(entity.Categories, model.Categories,
+			Utils.UpdateCollection(
+				entity.Categories,
+				model.Categories,
 				(e, m) => e.Category.Id == m.Id,
 				(m) => new Data.StartCategory { Start = entity, Category = dbContext.RaceCategories.Find(m.Id) }
 				);
