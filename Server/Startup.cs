@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
+using VeloTiming.Server.Services;
 
 namespace VeloTiming.Server
 {
@@ -24,9 +25,16 @@ namespace VeloTiming.Server
 			services.AddDbContext<Data.RacesDbContext>(options =>
 				options.UseSqlite(Configuration.GetConnectionString("DbContext")));
 
+			services.AddSignalR();
+
 			services.AddControllersWithViews();
 			services.AddRazorPages();
 			services.AddGrpc();
+
+			services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+			services.AddHostedService<QueuedHostedService>();
+
+			services.AddSingleton<IMainService, MainService>();
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -56,14 +64,17 @@ namespace VeloTiming.Server
 			{
 				endpoints.MapRazorPages();
 				endpoints.MapControllers();
-				endpoints.MapGrpcService<Services.RacesService>();
-				endpoints.MapGrpcService<Services.NumberService>();
-				endpoints.MapGrpcService<Services.RaceCategoryService>();
-				endpoints.MapGrpcService<Services.RidersService>();
-				endpoints.MapGrpcService<Services.StartsService>();
+				endpoints.MapGrpcService<RacesService>();
+				endpoints.MapGrpcService<NumberService>();
+				endpoints.MapGrpcService<RaceCategoryService>();
+				endpoints.MapGrpcService<RidersService>();
+				endpoints.MapGrpcService<StartsService>();
 				endpoints.MapFallbackToFile("index.html");
 			});
 
+			// Init Singleton services
+			app.ApplicationServices.GetService<IMainService>();
+			//app.ApplicationServices.GetService<IRfidListener>();
 		}
 	}
 }

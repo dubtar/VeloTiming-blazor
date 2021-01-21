@@ -20,6 +20,8 @@ namespace VeloTiming.Client.Pages.Races
 		Task DeleteStart(int startId);
 		Task<Start> AddStart(int raceId, Start start);
 		Task<Start> UpdateStart(Start start);
+
+		Task SetActiveStart(int startId);
 	}
 
 	internal class RaceSvc: IRaceSvc
@@ -94,6 +96,11 @@ namespace VeloTiming.Client.Pages.Races
 		public async Task<Start> AddStart(int raceId, Start start)
 		{
 			return await StartsClient.addAsync(new AddStartRequest { RaceId = raceId, Start = start });
+		}
+
+		public async Task SetActiveStart(int startId)
+		{
+			await StartsClient.setActiveStartAsync(new SetActiveStartRequest { StartId = startId });
 		}
 	}
 }

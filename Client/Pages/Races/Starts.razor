@@ -148,6 +148,7 @@ else
 	{
 		try
 		{
+			Error = null;
 			if (RaceId <= 0) throw new ArgumentException("RaceId incorrect");
 			var startsCall = svc.GetStarts(RaceId);
 			var catsCall = svc.GetRaceCategories(RaceId);
@@ -171,6 +172,7 @@ else
 	{
 		try
 		{
+			Error = null;
 			await svc.DeleteStart(startId);
 			await LoadStarts();
 		}
@@ -180,9 +182,17 @@ else
 		}
 	}
 
-	private void Start(int startId)
+	private async Task Start(int startId)
 	{
-		// TODO
+		try
+		{
+			Error = null;
+			await svc.SetActiveStart(startId);
+		}
+		catch (Exception ex)
+		{
+			Error = ex.ToString();
+		}
 	}
 
 	private async Task SaveStart()
@@ -190,6 +200,7 @@ else
 		if (EditModel == null) return;
 		try
 		{
+			Error = null;
 			EditModel.IsSaving = true;
 			var start = new Proto.Start
 			{

@@ -32,6 +32,7 @@ service Starts {
     rpc add(AddStartRequest) returns (Start);
     rpc update(Start) returns(Start);
     rpc delete(DeleteStartRequest) returns (google.protobuf.Empty);
+    rpc setActiveStart(SetActiveStartRequest) returns (google.protobuf.Empty);
 }
 
 message GetStartsByRaceRequest
@@ -56,4 +57,8 @@ message DeleteStartRequest
 message AddStartRequest {
     int32 RaceId = 1;
     Start Start = 2;
+}
+
+message SetActiveStartRequest {
+    int32 StartId = 1;
 }

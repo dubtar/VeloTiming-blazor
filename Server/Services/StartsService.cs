@@ -11,10 +11,12 @@ namespace VeloTiming.Server.Services
 	public class StartsService : Starts.StartsBase
 	{
 		private readonly Data.RacesDbContext dbContext;
+		private readonly IMainService mainService;
 
-		public StartsService(Data.RacesDbContext dbContext)
+		public StartsService(Data.RacesDbContext dbContext, IMainService mainService)
 		{
 			this.dbContext = dbContext;
+			this.mainService = mainService;
 		}
 		public override async Task<GetStartsByRaceResponse> getByRace(GetStartsByRaceRequest request, ServerCallContext context)
 		{
@@ -60,6 +62,11 @@ namespace VeloTiming.Server.Services
 			dbContext.Remove(start);
 			await dbContext.SaveChangesAsync();
 			return new Empty();
+		}
+
+		public override Task<Empty> setActiveStart(SetActiveStartRequest request, ServerCallContext context)
+		{
+			mainService
 		}
 
 		private void UpdateStart(Data.Start entity, Start model)
