@@ -11,9 +11,9 @@ namespace VeloTiming.Server.Services
 	public class StartsService : Starts.StartsBase
 	{
 		private readonly Data.RacesDbContext dbContext;
-		private readonly IMainService mainService;
+		private readonly IRaceLogic mainService;
 
-		public StartsService(Data.RacesDbContext dbContext, IMainService mainService)
+		public StartsService(Data.RacesDbContext dbContext, IRaceLogic mainService)
 		{
 			this.dbContext = dbContext;
 			this.mainService = mainService;

@@ -23,6 +23,9 @@
 		<Protobuf Include="..\Shared\Races.proto" GrpcServices="Client" Access="Internal">
 			<Link>Protos\Races.proto</Link>
 		</Protobuf>
+		<Protobuf Include="..\Shared\Main.proto" GrpcServices="Client" Access="Internal">
+			<Link>Protos\Main.proto</Link>
+		</Protobuf>
 		<Protobuf Include="..\Shared\Numbers.proto" GrpcServices="Client" Access="Internal">
 			<Link>Protos\Numbers.proto</Link>
 		</Protobuf>

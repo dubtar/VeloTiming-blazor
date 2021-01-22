@@ -1,0 +1,15 @@
+﻿
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "VeloTiming.Proto";
+
+service Main {
+	rpc setActiveStart(SetActiveStartRequest) returns (google.protobuf.Empty);
+}
+
+message SetActiveStartRequest {
+    int32 StartId = 1;
+}

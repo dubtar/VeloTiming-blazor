@@ -34,7 +34,7 @@ namespace VeloTiming.Server
 			services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
 			services.AddHostedService<QueuedHostedService>();
 
-			services.AddSingleton<IMainService, MainService>();
+			services.AddSingleton<IRaceLogic, RaceLogic>();
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -73,7 +73,7 @@ namespace VeloTiming.Server
 			});
 
 			// Init Singleton services
-			app.ApplicationServices.GetService<IMainService>();
+			app.ApplicationServices.GetService<IRaceLogic>();
 			//app.ApplicationServices.GetService<IRfidListener>();
 		}
 	}

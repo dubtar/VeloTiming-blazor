@@ -23,6 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Protobuf Include="..\Shared\Main.proto" GrpcServices="Server">
+      <Link>Protos\Main.proto</Link>
+    </Protobuf>
     <Protobuf Include="..\Shared\Numbers.proto" GrpcServices="Server">
       <Link>Protos\Numbers.proto</Link>
     </Protobuf>

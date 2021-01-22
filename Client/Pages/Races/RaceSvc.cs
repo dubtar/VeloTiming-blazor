@@ -37,6 +37,10 @@ namespace VeloTiming.Client.Pages.Races
 		private Proto.Races.RacesClient Client =>
 			_client ??= new Proto.Races.RacesClient(channel);
 
+		private Proto.Main.MainClient? _mainClient;
+		private Proto.Main.MainClient MainClient =>
+			_mainClient ??= new Main.MainClient(channel);
+
 		public async Task<Race> GetRace(int raceId)
 		{
 			var req = new GetRaceRequest() { RaceId = raceId };
@@ -100,7 +104,7 @@ namespace VeloTiming.Client.Pages.Races
 
 		public async Task SetActiveStart(int startId)
 		{
-			await StartsClient.setActiveStartAsync(new SetActiveStartRequest { StartId = startId });
+			await MainClient.setActiveStartAsync(new SetActiveStartRequest { StartId = startId });
 		}
 	}
 }
