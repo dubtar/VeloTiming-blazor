@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using VeloTiming.Proto;
+using VeloTiming.Server.Logic;
 
 namespace VeloTiming.Server.Services
 {
@@ -62,11 +63,6 @@ namespace VeloTiming.Server.Services
 			dbContext.Remove(start);
 			await dbContext.SaveChangesAsync();
 			return new Empty();
-		}
-
-		public override Task<Empty> setActiveStart(SetActiveStartRequest request, ServerCallContext context)
-		{
-			mainService
 		}
 
 		private void UpdateStart(Data.Start entity, Start model)

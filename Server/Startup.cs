@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using VeloTiming.Server.Services;
+using VeloTiming.Server.Logic;
 
 namespace VeloTiming.Server
 {

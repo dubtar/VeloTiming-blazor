@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using VeloTiming.Server.Data;
+using VeloTiming.Server.Hubs;
+using VeloTiming.Server.Services;
 
 namespace VeloTiming.Server.Logic
 {
@@ -33,16 +35,15 @@ namespace VeloTiming.Server.Logic
 		private readonly ITimeService timeService;
 
 		public RaceLogic(IServiceProvider serviceProvider)
-		//, , IResultHub> hub, IBackgroundTaskQueue taskQueue)
 		{
 			this.serviceProvider = serviceProvider;
-			hub = serviceProvider.GetService<IHubContext<ResultHub, IResultHub>>() ?? throw new Exception("Cannnot instantiate IResultHub");
-			taskQueue = serviceProvider.GetService<IBackgroundTaskQueue>();
-			timeService = serviceProvider.GetService<ITimeService>() ?? throw new Exception("Cannot initialize ITimeService");
+			hub = serviceProvider.GetService<IHubContext<ResultHub, IResultHub>>() ?? throw new Exception("Cannnot resolve IResultHub");
+			taskQueue = serviceProvider.GetService<IBackgroundTaskQueue>() ?? throw new Exception("Cannot resolve IBackgroudTaskQueue");
+			timeService = serviceProvider.GetService<ITimeService>() ?? throw new Exception("Cannot resolve ITimeService");
 			_ = Init();
 		}
 
-		public RaceInfo GetRaceInfo()
+		public RaceInfo? GetRaceInfo()
 		{
 			return Race;
 		}
@@ -50,21 +51,17 @@ namespace VeloTiming.Server.Logic
 		{
 			using (var serviceScope = serviceProvider.CreateScope())
 			{
-				var services = serviceScope.ServiceProvider;
-
 				try
 				{
-					using (var dataContext = services.GetRequiredService<RacesDbContext>())
+					var dataContext = serviceScope.ServiceProvider.GetRequiredService<RacesDbContext>();
+					var activeStart = await dataContext.Starts.Include(s => s.Race).FirstOrDefaultAsync(s => s.IsActive);
+					if (activeStart != null)
 					{
-						var activeStart = await dataContext.Starts.Include(s => s.Race).FirstOrDefaultAsync(s => s.IsActive);
-						if (activeStart != null)
-						{
-							var riders = await BuildNumbersDictionary(dataContext, activeStart.Id);
-							Race = new RaceInfo(activeStart, riders);
-							// Load Marks
-							Results.Clear();
-							Results.AddRange(dataContext.Results.Where(r => r.StartId == activeStart.Id));
-						}
+						var riders = await BuildNumbersDictionary(dataContext, activeStart.Id);
+						Race = new RaceInfo(activeStart, riders);
+						// Load Marks
+						Results.Clear();
+						Results.AddRange(dataContext.Results.Where(r => r.StartId == activeStart.Id));
 					}
 				}
 				catch (Exception ex)
@@ -133,7 +130,7 @@ namespace VeloTiming.Server.Logic
 
 		public void StartRun(DateTime date)
 		{
-			if (Race.Start == null)
+			if (Race != null && Race.Start == null)
 			{
 				Race.Start = date;
 				lock (Results)
@@ -144,15 +141,16 @@ namespace VeloTiming.Server.Logic
 		#region send signalr messages to clients
 		private async Task SendRaceStarted()
 		{
-			await hub.Clients.All.RaceStarted(Race);
+			if (Race != null)
+				await hub.Clients.All.RaceStarted(Race);
 		}
 
-		private async Task SendResultAdded(Mark mark)
+		private async Task SendResultAdded(Result mark)
 		{
 			await hub.Clients.All.ResultAdded(mark);
 		}
 
-		private async Task SendResultUpdated(Mark mark)
+		private async Task SendResultUpdated(Result mark)
 		{
 			await hub.Clients.All.ResultUpdated(mark);
 		}
@@ -160,9 +158,10 @@ namespace VeloTiming.Server.Logic
 
 		#region Process inputs methods. Main logic is here
 		const int MARKS_MERGE_SECONDS = 30;
-		private Task ProcessAddMark(DateTime? time, string number, string source, System.Threading.CancellationToken token)
+		private Task ProcessAddMark(DateTime? time, string? number, string source, System.Threading.CancellationToken token)
 		{
-			string riderName = null;
+			if (Race == null) throw new Exception("Race not started");
+			string? riderName = null;
 			if (!string.IsNullOrEmpty(number) && !Race.Numbers.TryGetValue(number, out riderName))
 			{
 				// Number is not in race numbers - ignore mark
@@ -174,7 +173,7 @@ namespace VeloTiming.Server.Logic
 			if (time.HasValue && Race.Start.HasValue && (time.Value - Race.Start.Value).TotalMinutes < Race.DelayMarksAfterStartMinutes)
 				return Task.CompletedTask;
 
-			Task task = null;
+			Task? task = null;
 			lock (Results)
 			{
 				var leftTime = markTime.AddSeconds(-MARKS_MERGE_SECONDS);
@@ -182,7 +181,7 @@ namespace VeloTiming.Server.Logic
 				var nearbyResults = Results.SkipWhile(m => (m.Time ?? m.CreatedOn) < leftTime).TakeWhile(m => (m.Time ?? m.CreatedOn) <= rightTime);
 				bool reorder = false;
 				bool added = false;
-				Mark result = null;
+				Result? result = null;
 				// determine type of a mark:
 				if (time.HasValue && string.IsNullOrWhiteSpace(number))
 				{
@@ -191,7 +190,7 @@ namespace VeloTiming.Server.Logic
 					result = nearbyResults.FirstOrDefault(r => !r.Time.HasValue);
 					if (result == null)
 					{
-						Results.Add(result = Mark.Create(timeService, Race.StartId)); // add new time withough
+						Results.Add(result = Result.Create(timeService, Race.StartId)); // add new time withough
 						added = true;
 					}
 					result.Time = time;
@@ -204,7 +203,7 @@ namespace VeloTiming.Server.Logic
 					result = nearbyResults.FirstOrDefault(r => string.IsNullOrWhiteSpace(r.Number));
 					if (result == null)
 					{
-						Results.Add(result = Mark.Create(timeService, Race.StartId));
+						Results.Add(result = Result.Create(timeService, Race.StartId));
 						reorder = added = true;
 					}
 					result.Number = number;
@@ -216,7 +215,7 @@ namespace VeloTiming.Server.Logic
 					result = nearbyResults.FirstOrDefault(r => r.Number == number);
 					if (result == null)
 					{
-						result = Mark.Create(timeService, Race.StartId);
+						result = Result.Create(timeService, Race.StartId);
 						result.Number = number;
 						result.NumberSource = source;
 						Results.Add(result);
@@ -242,7 +241,7 @@ namespace VeloTiming.Server.Logic
 						Time = time
 					});
 					if (reorder)
-						Results.Sort(delegate (Mark a, Mark b)
+						Results.Sort(delegate (Result a, Result b)
 						{
 							return (a.Time ?? a.CreatedOn.AddSeconds(MARKS_MERGE_SECONDS)).CompareTo(b.Time ?? b.CreatedOn.AddSeconds(MARKS_MERGE_SECONDS));
 						});
@@ -258,7 +257,7 @@ namespace VeloTiming.Server.Logic
 			return task ?? Task.CompletedTask;
 		}
 
-		private void ProcessPlace(Mark result, int? index = null)
+		private void ProcessPlace(Result result, int? index = null)
 		{
 			if (index == null) index = Results.IndexOf(result);
 			if (index == null || index < 0) return;
@@ -297,7 +296,7 @@ namespace VeloTiming.Server.Logic
 			if (result == null || Race == null) return;
 			using (var scope = serviceProvider.CreateScope())
 			{
-				var resultService = scope.ServiceProvider.GetService<IResultRepository>();
+				var resultService = scope.ServiceProvider.GetService<IResultLogic>() ?? throw new Exception($"Cannot resolve {nameof(IResultLogic)}");
 				await resultService.AddOrUpdateResult(result);
 			}
 		}
@@ -306,6 +305,7 @@ namespace VeloTiming.Server.Logic
 		{
 			lock (Results)
 			{
+				// TODO
 			}
 			return Task.CompletedTask;
 		}

@@ -22,7 +22,7 @@ namespace VeloTiming.Server.Data
 		public int StartId { get; set; }
 		public virtual Start Start { get; set; } = null!;
 
-		internal static Result Create(TimeService timeService, int startId)
+		internal static Result Create(ITimeService timeService, int startId)
 		{
 			return new Result { CreatedOn = timeService.Now, StartId = startId };
 		}
