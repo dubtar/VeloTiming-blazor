@@ -37,6 +37,7 @@ namespace VeloTiming.Server.Logic
 		public RaceLogic(IServiceProvider serviceProvider)
 		{
 			this.serviceProvider = serviceProvider;
+
 			hub = serviceProvider.GetService<IHubContext<ResultHub, IResultHub>>() ?? throw new Exception("Cannnot resolve IResultHub");
 			taskQueue = serviceProvider.GetService<IBackgroundTaskQueue>() ?? throw new Exception("Cannot resolve IBackgroudTaskQueue");
 			timeService = serviceProvider.GetService<ITimeService>() ?? throw new Exception("Cannot resolve ITimeService");
@@ -74,7 +75,9 @@ namespace VeloTiming.Server.Logic
 		public static async Task<Dictionary<string, string>> BuildNumbersDictionary(RacesDbContext dataContext, int startId)
 		{
 			var categoryIds = await dataContext.Set<StartCategory>().Where(s => s.Start.Id == startId).Select(s => s.Category.Id).ToArrayAsync() ?? Array.Empty<int>();
-			var riders = await dataContext.Set<Rider>().Where(r => r.Category != null && categoryIds.Contains(r.Category.Id)).ToDictionaryAsync(r => r.Number, r => $"{r.LastName} {r.FirstName}");
+			var riders = await dataContext.Set<Rider>()
+				.Where(r => r.Category != null && categoryIds.Contains(r.Category.Id) && !string.IsNullOrEmpty(r.Number))
+				.ToDictionaryAsync(r => r.Number, r => $"{r.LastName} {r.FirstName}");
 			return riders;
 		}
 

@@ -45,10 +45,6 @@ namespace VeloTiming.Server.Services
 				{
 					throw new Exception($"Start not found by id: {startId}");
 				}
-				catch (Exception ex)
-				{
-					throw new Exception(ex.Message);
-				}
 			}
 			return new Empty();
 		}

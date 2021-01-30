@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using VeloTiming.Server.Services;
 using VeloTiming.Server.Logic;
+using VeloTiming.Server.Data;
 
 namespace VeloTiming.Server
 {
@@ -35,6 +36,7 @@ namespace VeloTiming.Server
 			services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
 			services.AddHostedService<QueuedHostedService>();
 
+			services.AddSingleton<ITimeService, TimeService>();
 			services.AddSingleton<IRaceLogic, RaceLogic>();
 		}
 
@@ -66,6 +68,7 @@ namespace VeloTiming.Server
 				endpoints.MapRazorPages();
 				endpoints.MapControllers();
 				endpoints.MapGrpcService<RacesService>();
+				endpoints.MapGrpcService<MainService>();
 				endpoints.MapGrpcService<NumberService>();
 				endpoints.MapGrpcService<RaceCategoryService>();
 				endpoints.MapGrpcService<RidersService>();
