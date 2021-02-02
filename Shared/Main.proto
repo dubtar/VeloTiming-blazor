@@ -1,15 +1,25 @@
-﻿
-syntax = "proto3";
+﻿syntax = "proto3";
 
 import "google/protobuf/empty.proto";
-// import "google/protobuf/timestamp.proto";
+import "google/protobuf/timestamp.proto";
+import "Start.proto";
 
 option csharp_namespace = "VeloTiming.Proto";
 
 service Main {
 	rpc setActiveStart(SetActiveStartRequest) returns (google.protobuf.Empty);
+	rpc GetRaceInfo(google.protobuf.Empty) returns (RaceInfo);
 }
 
 message SetActiveStartRequest {
     int32 StartId = 1;
+}
+
+message RaceInfo {
+	int32 RaceId = 1;
+	string Racename = 2;
+	int32 StartId = 3;
+	string StartName = 4;
+	google.protobuf.Timestamp StartTime = 5;
+	StartType StartType = 6;
 }

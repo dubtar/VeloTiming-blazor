@@ -28,9 +28,13 @@ namespace VeloTiming.Client.Pages.Races
 	{
 		private readonly GrpcChannel channel;
 
+		private readonly Marks = new Subject<>
+
 		public RaceSvc(GrpcChannel channel)
 		{
 			this.channel = channel;
+			// connect to signalR
+
 		}
 
 		private Proto.Races.RacesClient? _client;

@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using VeloTiming.Server.Services;
 using VeloTiming.Server.Logic;
 using VeloTiming.Server.Data;
+using Microsoft.AspNetCore.ResponseCompression;
+using System.Linq;
 
 namespace VeloTiming.Server
 {
@@ -32,6 +34,11 @@ namespace VeloTiming.Server
 			services.AddControllersWithViews();
 			services.AddRazorPages();
 			services.AddGrpc();
+			services.AddResponseCompression(opts =>
+			{
+				opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+					new[] { "application/octet-stream" });
+			});
 
 			services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
 			services.AddHostedService<QueuedHostedService>();
@@ -43,6 +50,8 @@ namespace VeloTiming.Server
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 		public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 		{
+			app.UseResponseCompression();
+
 			if (env.IsDevelopment())
 			{
 				app.UseDeveloperExceptionPage();
@@ -73,6 +82,8 @@ namespace VeloTiming.Server
 				endpoints.MapGrpcService<RaceCategoryService>();
 				endpoints.MapGrpcService<RidersService>();
 				endpoints.MapGrpcService<StartsService>();
+				endpoints.MapHub<Hubs.ResultHub>("resultHub");
+				//endpoints.MapHub<RfidHub>("/rfidHub");
 				endpoints.MapFallbackToFile("index.html");
 			});
 
