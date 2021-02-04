@@ -1,3 +1,4 @@
+@implements IAsyncDisposable
 @using System.ComponentModel.DataAnnotations
 @inject IRaceSvc svc
 
@@ -34,7 +35,10 @@ else
 								<div class="btn-group">
 									@if (start.RealStart == null)
 									{
-										<button class="btn btn-success" @onclick="@(() => Start(start.Id))">Начать</button>
+										if (!HaveActiveStart)
+										{
+											<button class="btn btn-success" @onclick="@(() => Start(start.Id))">Начать</button>
+										}
 									}
 									else
 									{
@@ -137,11 +141,24 @@ else
 	private string? Error;
 	private ICollection<Proto.Start>? StartsList { get; set; }
 	private ICollection<Proto.RaceCategory>? RaceCategories { get; set; }
+	private bool HaveActiveStart;
+	private IDisposable? subscription;
 
 
 	protected override async Task OnInitializedAsync()
 	{
+		subscription = svc.GetRaceInfoSubject().Subscribe(r =>
+		{
+			HaveActiveStart = r != null;
+			StateHasChanged();
+		});
 		await LoadStarts();
+	}
+
+	public ValueTask DisposeAsync()
+	{
+		subscription?.Dispose();
+		return ValueTask.CompletedTask;
 	}
 
 	private async Task LoadStarts()

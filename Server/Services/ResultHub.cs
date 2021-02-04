@@ -8,10 +8,10 @@ namespace VeloTiming.Server.Hubs
 {
 	public interface IResultHub
 	{
-		Task ActiveStart(RaceInfo? race);
-		Task RaceStarted(RaceInfo race);
-		Task ResultAdded(Result mark);
-		Task ResultUpdated(Result mark);
+		Task ActiveStart(Proto.RaceInfo? race);
+		Task RaceStarted(Proto.RaceInfo race);
+		Task ResultAdded(Result mark); // TODO: replace with Proto.Result
+		Task ResultUpdated(Result mark); // TODO: replace with Proto.Result
 
 	}
 	public class ResultHub : Hub<IResultHub>

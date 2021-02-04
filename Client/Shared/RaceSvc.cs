@@ -1,9 +1,13 @@
 ﻿using Grpc.Net.Client;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.SignalR.Client;
+using System;
 using System.Collections.Generic;
+using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using VeloTiming.Proto;
 
-namespace VeloTiming.Client.Pages.Races
+namespace VeloTiming.Client
 {
 	internal interface IRaceSvc
 	{
@@ -22,27 +26,44 @@ namespace VeloTiming.Client.Pages.Races
 		Task<Start> UpdateStart(Start start);
 
 		Task SetActiveStart(int startId);
+		Task DeactivateStart();
+		IObservable<RaceInfo?> GetRaceInfoSubject();
 	}
 
-	internal class RaceSvc: IRaceSvc
+	internal class RaceSvc: IRaceSvc, IAsyncDisposable
 	{
 		private readonly GrpcChannel channel;
+		private readonly HubConnection hubConnection;
+		private RaceInfo? activeStart;
 
-		private readonly Marks = new Subject<>
+		private readonly BehaviorSubject<RaceInfo?> RaceInfo = new BehaviorSubject<RaceInfo?>(null);
+		public IObservable<RaceInfo?> GetRaceInfoSubject() => RaceInfo;
 
-		public RaceSvc(GrpcChannel channel)
+		public RaceSvc(GrpcChannel channel, NavigationManager navigationManager)
 		{
 			this.channel = channel;
-			// connect to signalR
 
+			hubConnection = new HubConnectionBuilder()
+				.WithUrl(navigationManager.ToAbsoluteUri("/resultHub"))
+				.WithAutomaticReconnect()
+				.Build();
+
+			hubConnection.On<RaceInfo?>("ActiveStart", SetActiveStart);
+			hubConnection.On<RaceInfo?>("RaceStarted", SetActiveStart);
+
+			// hubConnection.On<Result>("ResultAdded", ResultAdded);
+			// hubConnection.On<Result>("ResultUpdated", ResultUpdated);
+
+			_ = hubConnection.StartAsync();
+			_ = GetRaceInfo();
 		}
 
-		private Proto.Races.RacesClient? _client;
-		private Proto.Races.RacesClient Client =>
-			_client ??= new Proto.Races.RacesClient(channel);
+		private Races.RacesClient? _client;
+		private Races.RacesClient Client =>
+			_client ??= new Races.RacesClient(channel);
 
-		private Proto.Main.MainClient? _mainClient;
-		private Proto.Main.MainClient MainClient =>
+		private Main.MainClient? _mainClient;
+		private Main.MainClient MainClient =>
 			_mainClient ??= new Main.MainClient(channel);
 
 		public async Task<Race> GetRace(int raceId)
@@ -70,7 +91,7 @@ namespace VeloTiming.Client.Pages.Races
 		}
 		public async Task<IList<RaceCategory>> GetRaceCategories(int raceId)
 		{
-			var res = await new Proto.RaceCategories.RaceCategoriesClient(channel)
+			var res = await new RaceCategories.RaceCategoriesClient(channel)
 				.getByRaceAsync(new GetCategoriesByRaceRequest { RaceId = raceId });
 			return res.Categories;
 		}
@@ -82,9 +103,9 @@ namespace VeloTiming.Client.Pages.Races
 		}
 
 
-		private Proto.Starts.StartsClient? _startsClient;
-		private Proto.Starts.StartsClient StartsClient =>
-			_startsClient ??= new Proto.Starts.StartsClient(channel);
+		private Starts.StartsClient? _startsClient;
+		private Starts.StartsClient StartsClient =>
+			_startsClient ??= new Starts.StartsClient(channel);
 
 		public async Task<IList<Start>> GetStarts(int raceId)
 		{
@@ -110,5 +131,29 @@ namespace VeloTiming.Client.Pages.Races
 		{
 			await MainClient.setActiveStartAsync(new SetActiveStartRequest { StartId = startId });
 		}
+
+		private void SetActiveStart(RaceInfo? race)
+		{
+			activeStart = race;
+			RaceInfo.OnNext(activeStart);
+		}
+
+		public async Task DeactivateStart()
+		{
+			if (activeStart != null)
+				await MainClient.DeactivateStartAsync(new Google.Protobuf.WellKnownTypes.Empty());
+		}
+
+		public async Task<RaceInfo?> GetRaceInfo()
+		{
+			var result = await MainClient.GetRaceInfoAsync(new Google.Protobuf.WellKnownTypes.Empty());
+			SetActiveStart(result.RaceInfo);
+			return activeStart;
+		}
+		public ValueTask DisposeAsync()
+		{
+			return hubConnection.DisposeAsync();
+		}
+
 	}
 }

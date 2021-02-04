@@ -25,7 +25,7 @@ namespace VeloTiming.Client
 				return GrpcChannel.ForAddress(baseAddress, new GrpcChannelOptions { HttpHandler = handler });
 			});
 
-			builder.Services.AddSingleton<Pages.Races.IRaceSvc, Pages.Races.RaceSvc>();
+			builder.Services.AddSingleton<IRaceSvc, RaceSvc>();
 
 			await builder.Build().RunAsync();
 		}

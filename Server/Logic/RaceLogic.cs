@@ -21,7 +21,7 @@ namespace VeloTiming.Server.Logic
 		void AddTime(DateTime time, string source);
 		void AddNumber(string number, string source);
 		void UpdateMark(Result mark);
-		Task SetActiveStart(Start start, Dictionary<string, string> numbers);
+		Task SetActiveStart(Start? start, Dictionary<string, string>? numbers = null);
 		void AddNumberAndTime(string id, DateTime time, string v);
 	}
 
@@ -81,10 +81,26 @@ namespace VeloTiming.Server.Logic
 			return riders;
 		}
 
-		public async Task SetActiveStart(Start start, Dictionary<string, string> numbers)
+		public async Task SetActiveStart(Start? start, Dictionary<string, string>? numbers = null)
 		{
+			if (start?.Id == Race?.StartId) return;
+
+			if (Race != null)
+			{
+				// remove active flag on active start and set end date
+				using var scope = serviceProvider.CreateScope();
+				var dataContext = scope.ServiceProvider.GetRequiredService<RacesDbContext>();
+				var startEntity = await dataContext.Starts.FindAsync(Race.StartId);
+				if (startEntity != null)
+				{
+					startEntity.IsActive = false;
+					startEntity.End = DateTime.UtcNow;
+					await dataContext.SaveChangesAsync();
+				}
+				Race = null;
+			}
 			Race = start == null ? null : new RaceInfo(start, numbers);
-			await hub.Clients.All.ActiveStart(Race);
+			await hub.Clients.All.ActiveStart(Race.ToProto());
 		}
 
 		public IEnumerable<Result> GetMarks()
@@ -145,7 +161,7 @@ namespace VeloTiming.Server.Logic
 		private async Task SendRaceStarted()
 		{
 			if (Race != null)
-				await hub.Clients.All.RaceStarted(Race);
+				await hub.Clients.All.RaceStarted(Race.ToProto()!);
 		}
 
 		private async Task SendResultAdded(Result mark)
@@ -318,17 +334,19 @@ namespace VeloTiming.Server.Logic
 
 public class RaceInfo
 {
-	public RaceInfo(Start start, Dictionary<string, string> numbers)
+	public RaceInfo(Start start, Dictionary<string, string>? numbers)
 	{
+		RaceId = start.RaceId;
 		StartId = start.Id;
 		RaceName = start.Race.Name;
 		StartName = start.Name;
 		Start = start.RealStart;
 		DelayMarksAfterStartMinutes = start.DelayMarksAfterStartMinutes;
-		Numbers = new ReadOnlyDictionary<string, string>(numbers);
+		Numbers = new ReadOnlyDictionary<string, string>(numbers ?? new Dictionary<string, string>());
 		Type = start.Type;
 	}
 
+	public int RaceId { get; }
 	public int StartId { get; }
 	public string RaceName { get; }
 	public string StartName { get; }

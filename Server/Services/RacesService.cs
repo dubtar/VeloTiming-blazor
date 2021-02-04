@@ -121,7 +121,7 @@ namespace VeloTiming.Server.Services
 								break;
 							case RiderImportColumnType.Team: rider.Team = value; break;
 							case RiderImportColumnType.Year:
-								if (int.TryParse(value, out int year) && year > 1900 && year < DateTime.Now.Year)
+								if (int.TryParse(value, out int year) && year > 1900 && year < DateTime.UtcNow.Year)
 									rider.YearOfBirth = year;
 								break;
 						}

@@ -1,7 +1,9 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using VeloTiming.Proto;
 using VeloTiming.Server.Data;
@@ -33,7 +35,8 @@ namespace VeloTiming.Server.Services
 			{
 				try
 				{
-					var start = await dataContext.Starts.FindAsync(startId);
+					var start = await dataContext.Starts.Include(s => s.Race)
+						.FirstOrDefaultAsync(s => s.Id == startId);
 					if (start == null) throw new Exception($"Start not found by id {startId}");
 					start.IsActive = true;
 
@@ -46,6 +49,21 @@ namespace VeloTiming.Server.Services
 					throw new Exception($"Start not found by id: {startId}");
 				}
 			}
+			return new Empty();
+		}
+
+		public override Task<GetRaceInfoResponse> GetRaceInfo(Empty request, ServerCallContext context)
+		{
+			var result = new GetRaceInfoResponse
+			{
+				RaceInfo = raceLogic.GetRaceInfo().ToProto()
+			};
+			return Task.FromResult(result);
+		}
+
+		public override async Task<Empty> DeactivateStart(Empty request, ServerCallContext context)
+		{
+			await raceLogic.SetActiveStart(null, null);
 			return new Empty();
 		}
 	}

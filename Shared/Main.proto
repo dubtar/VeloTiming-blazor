@@ -8,11 +8,16 @@ option csharp_namespace = "VeloTiming.Proto";
 
 service Main {
 	rpc setActiveStart(SetActiveStartRequest) returns (google.protobuf.Empty);
-	rpc GetRaceInfo(google.protobuf.Empty) returns (RaceInfo);
+	rpc GetRaceInfo(google.protobuf.Empty) returns (GetRaceInfoResponse);
+	rpc DeactivateStart(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 message SetActiveStartRequest {
     int32 StartId = 1;
+}
+
+message GetRaceInfoResponse {
+	RaceInfo RaceInfo = 1;
 }
 
 message RaceInfo {

@@ -43,5 +43,19 @@ namespace VeloTiming.Server
 				entities.Add(createFunc(m));
 			}
 		}
+
+		internal static Proto.RaceInfo? ToProto(this RaceInfo? raceInfo)
+		{
+			return raceInfo == null ? null :
+				new Proto.RaceInfo
+				{
+					RaceId = raceInfo.StartId,
+					Racename = raceInfo.RaceName,
+					StartId = raceInfo.StartId,
+					StartName = raceInfo.StartName,
+					StartTime = raceInfo.Start.ToTimestamp(),
+					StartType = raceInfo.Type.ToProto()
+				};
+		}
 	}
 }
