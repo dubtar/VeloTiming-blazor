@@ -1,0 +1,44 @@
+﻿@implements IAsyncDisposable
+@page "/run"
+@inject IRaceSvc svc
+
+@code {
+	Proto.RaceInfo? Race;
+	//Proto.Result[] Marks;
+	IDisposable? marksSubscription;
+	IDisposable? raceSubscription;
+
+
+	protected override Task OnInitializedAsync()
+	{
+		KeyboardHandler.OnDocumentKeyDown += OnKeyDown;
+		raceSubscription = svc.GetRaceInfoSubject().Subscribe(r =>
+		{
+			Race = r;
+			StateHasChanged();
+		});
+		//marksSubscription = svc.GetMarksSubscription().Subscribe(m =>
+		//{
+		//	Marks = m; StateHasChanged();
+		//});
+		return Task.CompletedTask;
+	}
+
+	public ValueTask DisposeAsync()
+	{
+		KeyboardHandler.OnDocumentKeyDown -= OnKeyDown;
+		raceSubscription?.Dispose();
+		marksSubscription?.Dispose();
+		return ValueTask.CompletedTask;
+	}
+	private void StartRace()
+	{
+		if (Race != null)
+			svc.StartRace();
+	}
+
+	private void OnKeyDown(object? _, KeyboardEvent args)
+	{
+		// TODO
+	}
+}

@@ -1,6 +1,5 @@
 @inherits LayoutComponentBase
 @inject IRaceSvc svc
-@inject IJSRuntime jsRuntime
 
 <div class="h-100 d-flex flex-column">
 	<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -21,12 +20,7 @@
 				</ul>
 				@if (Race != null)
 				{
-					<ul class="navbar-nav">
-						<NavLink class="btn btn-success" href="/run">
-							@Race.Racename @Race.StartName
-						</NavLink>
-						<li class="btn btn-secondary" @onclick="@Deactivate">Остановить</li>
-					</ul>
+					<RaceNavButtons RaceName="@Race.Racename" StartName="@Race.StartName" />
 				}
 			</div>
 		</div>
@@ -41,13 +35,5 @@
 	protected override void OnInitialized()
 	{
 		svc.GetRaceInfoSubject().Subscribe(r => { Race = r; StateHasChanged(); });
-	}
-
-	private async Task Deactivate()
-	{
-		if (await jsRuntime.InvokeAsync<bool>("confirm", "Остановить текущий заезд?"))
-		{
-			await svc.DeactivateStart();
-		}
 	}
 }

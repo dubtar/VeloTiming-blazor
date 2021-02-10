@@ -1,0 +1,24 @@
+﻿@inject IRaceSvc svc
+@inject IJSRuntime jsRuntime
+
+<ul class="navbar-nav">
+	<NavLink class="btn btn-success" href="/run">
+		@RaceName @StartName
+	</NavLink>
+	<li class="btn btn-secondary" @onclick="@Deactivate">Остановить</li>
+</ul>
+
+@code {
+	[Parameter]
+	public string RaceName { get; set; } = null!;
+	[Parameter]
+	public string StartName { get; set; } = null!;
+
+	private async Task Deactivate()
+	{
+		if (await jsRuntime.InvokeAsync<bool>("confirm", "Остановить текущий заезд?"))
+		{
+			await svc.DeactivateStart();
+		}
+	}
+}
