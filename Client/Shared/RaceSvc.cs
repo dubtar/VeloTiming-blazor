@@ -28,6 +28,7 @@ namespace VeloTiming.Client
 		Task SetActiveStart(int startId);
 		Task DeactivateStart();
 		IObservable<RaceInfo?> GetRaceInfoSubject();
+		Task MakeStart();
 	}
 
 	internal class RaceSvc: IRaceSvc, IAsyncDisposable
@@ -155,5 +156,10 @@ namespace VeloTiming.Client
 			return hubConnection.DisposeAsync();
 		}
 
+		public Task MakeStart()
+		{
+			// TODO
+			return Task.CompletedTask;
+		}
 	}
 }
