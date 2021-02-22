@@ -66,5 +66,13 @@ namespace VeloTiming.Server.Services
 			await raceLogic.SetActiveStart(null, null);
 			return new Empty();
 		}
+
+		public override Task<GetResultsResponse> GetResults(Empty request, ServerCallContext context)
+		{
+			var results = raceLogic.GetMarks();
+			var result = new GetResultsResponse();
+			result.Results.AddRange(results.Select(Utils.ToProto));
+			return Task.FromResult(result);
+		}
 	}
 }

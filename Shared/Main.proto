@@ -10,6 +10,8 @@ service Main {
 	rpc setActiveStart(SetActiveStartRequest) returns (google.protobuf.Empty);
 	rpc GetRaceInfo(google.protobuf.Empty) returns (GetRaceInfoResponse);
 	rpc DeactivateStart(google.protobuf.Empty) returns (google.protobuf.Empty);
+	rpc GetResults(google.protobuf.Empty) returns (GetResultsResponse);
+	rpc MakeStart(MakeStartRequest) returns (google.protobuf.Empty);
 }
 
 message SetActiveStartRequest {
@@ -27,4 +29,22 @@ message RaceInfo {
 	string StartName = 4;
 	google.protobuf.Timestamp StartTime = 5;
 	StartType StartType = 6;
+}
+
+message Result {
+	string Id = 1;
+	google.protobuf.Timestamp CreatedOn = 2;
+	google.protobuf.Timestamp Time = 3;
+	string Number = 4;
+	string TimeSource = 5;
+	string NumberSource = 6;
+	int32 Lap = 7;
+	int32 Place = 8;
+}
+message GetResultsResponse {
+	repeated Result Results = 1;
+}
+
+message MakeStartRequest {
+	int32 StartId = 1;
 }

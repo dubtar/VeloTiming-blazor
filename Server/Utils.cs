@@ -57,5 +57,20 @@ namespace VeloTiming.Server
 					StartType = raceInfo.Type.ToProto()
 				};
 		}
+
+		internal static Proto.Result ToProto(this Data.Result result)
+		{
+			return new Proto.Result
+			{
+				CreatedOn = result.CreatedOn.ToTimestamp(),
+				Id = result.Id,
+				Lap = result.Lap,
+				Number = result.Number,
+				NumberSource = result.NumberSource,
+				Place = result.Place,
+				Time = result.Time.ToTimestamp(),
+				TimeSource = result.TimeSource
+			};
+		}
 	}
 }

@@ -4,7 +4,7 @@
 
 @code {
 	Proto.RaceInfo? Race;
-	//Proto.Result[] Marks;
+	Proto.Result[]? Marks;
 	IDisposable? marksSubscription;
 	IDisposable? raceSubscription;
 
@@ -17,10 +17,11 @@
 			Race = r;
 			StateHasChanged();
 		});
-		//marksSubscription = svc.GetMarksSubscription().Subscribe(m =>
-		//{
-		//	Marks = m; StateHasChanged();
-		//});
+		marksSubscription = svc.GetResultsSubscription().Subscribe(m =>
+		{
+			Marks = m;
+			StateHasChanged();
+		});
 		return Task.CompletedTask;
 	}
 
@@ -34,7 +35,7 @@
 	private void StartRace()
 	{
 		if (Race != null)
-			svc.MakeStart();
+			svc.MakeStart(Race.StartId);
 	}
 
 	private void OnKeyDown(object? _, KeyboardEvent args)

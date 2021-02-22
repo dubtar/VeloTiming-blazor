@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using VeloTiming.Proto;
@@ -28,17 +29,20 @@ namespace VeloTiming.Client
 		Task SetActiveStart(int startId);
 		Task DeactivateStart();
 		IObservable<RaceInfo?> GetRaceInfoSubject();
-		Task MakeStart();
+		IObservable<Result[]> GetResultsSubscription();
+		Task MakeStart(int startId);
 	}
 
 	internal class RaceSvc: IRaceSvc, IAsyncDisposable
 	{
 		private readonly GrpcChannel channel;
 		private readonly HubConnection hubConnection;
-		private RaceInfo? activeStart;
 
 		private readonly BehaviorSubject<RaceInfo?> RaceInfo = new BehaviorSubject<RaceInfo?>(null);
 		public IObservable<RaceInfo?> GetRaceInfoSubject() => RaceInfo;
+
+		private readonly BehaviorSubject<Result[]> Results = new BehaviorSubject<Result[]>(new Result[0]);
+		public IObservable<Result[]> GetResultsSubscription() => Results;
 
 		public RaceSvc(GrpcChannel channel, NavigationManager navigationManager)
 		{
@@ -52,11 +56,12 @@ namespace VeloTiming.Client
 			hubConnection.On<RaceInfo?>("ActiveStart", SetActiveStart);
 			hubConnection.On<RaceInfo?>("RaceStarted", SetActiveStart);
 
-			// hubConnection.On<Result>("ResultAdded", ResultAdded);
-			// hubConnection.On<Result>("ResultUpdated", ResultUpdated);
+			hubConnection.On<Result>("ResultAdded", ResultAdded);
+			hubConnection.On<Result>("ResultUpdated", ResultUpdated);
 
 			_ = hubConnection.StartAsync();
-			_ = GetRaceInfo();
+			_ = LoadRaceInfo();
+			_ = LoadResults();
 		}
 
 		private Races.RacesClient? _client;
@@ -135,31 +140,76 @@ namespace VeloTiming.Client
 
 		private void SetActiveStart(RaceInfo? race)
 		{
-			activeStart = race;
-			RaceInfo.OnNext(activeStart);
+			RaceInfo.OnNext(race);
 		}
 
 		public async Task DeactivateStart()
 		{
-			if (activeStart != null)
+			if (RaceInfo.Value != null)
 				await MainClient.DeactivateStartAsync(new Google.Protobuf.WellKnownTypes.Empty());
 		}
 
-		public async Task<RaceInfo?> GetRaceInfo()
+		private async Task<RaceInfo?> LoadRaceInfo()
 		{
 			var result = await MainClient.GetRaceInfoAsync(new Google.Protobuf.WellKnownTypes.Empty());
 			SetActiveStart(result.RaceInfo);
-			return activeStart;
+			return result.RaceInfo;
 		}
 		public ValueTask DisposeAsync()
 		{
 			return hubConnection.DisposeAsync();
 		}
 
-		public Task MakeStart()
+		public async Task MakeStart(int startId)
 		{
-			// TODO
-			return Task.CompletedTask;
+			await MainClient.MakeStartAsync(new MakeStartRequest { StartId = startId });
+		}
+
+		private void ResultAdded(Result result)
+		{
+			bool inserted = false;
+			var results = Results.Value.ToList();
+			var newResTime = GetResultTime(result);
+			for (var i = 0; i < results.Count; i++)
+			{
+				var curRes = results[i];
+				var curResTime = GetResultTime(curRes);
+				if (curResTime > newResTime)
+				{
+					results.Insert(i, result);
+					inserted = true;
+					break;
+				}
+			}
+			if (!inserted)
+			{
+				results.Add(result);
+			}
+			Results.OnNext(results.ToArray());
+		}
+
+		private void ResultUpdated(Result result)
+		{
+			var results = Results.Value.ToList();
+			var ind = results.FindIndex(r => r.Id == result.Id);
+			if (ind >= 0)
+			{
+				var timeChanged = GetResultTime(result) != GetResultTime(results[ind]);
+				results[ind] = result;
+				if (timeChanged) results.Sort((a, b) => (int)(GetResultTime(a).Ticks - GetResultTime(b).Ticks));
+				Results.OnNext(results.ToArray());
+			}
+		}
+
+		public static DateTime GetResultTime(Result result)
+		{
+			return result.Time?.ToDateTime() ?? result.CreatedOn.ToDateTime();
+		}
+
+		public async Task LoadResults()
+		{
+			var results = await MainClient.GetResultsAsync(new Google.Protobuf.WellKnownTypes.Empty());
+			Results.OnNext(results.Results.ToArray());
 		}
 	}
 }
