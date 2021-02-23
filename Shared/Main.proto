@@ -40,6 +40,7 @@ message Result {
 	string NumberSource = 6;
 	int32 Lap = 7;
 	int32 Place = 8;
+	string Rider = 9;
 }
 message GetResultsResponse {
 	repeated Result Results = 1;

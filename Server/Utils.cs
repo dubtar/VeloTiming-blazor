@@ -69,7 +69,8 @@ namespace VeloTiming.Server
 				NumberSource = result.NumberSource,
 				Place = result.Place,
 				Time = result.Time.ToTimestamp(),
-				TimeSource = result.TimeSource
+				TimeSource = result.TimeSource,
+				Rider = result.Name
 			};
 		}
 	}

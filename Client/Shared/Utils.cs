@@ -1,4 +1,5 @@
 using Google.Protobuf.WellKnownTypes;
+using System;
 
 namespace VeloTiming.Client
 {
@@ -15,6 +16,14 @@ namespace VeloTiming.Client
 			if (time == null) return string.Empty;
 			return time.ToDateTime().ToLocalTime().ToShortTimeString();
 		}
+
+		internal static string FormatTime(DateTime? endTime, DateTime? startTime)
+		{
+			if (endTime == null || startTime == null) return "--:--";
+			var diff = endTime.Value - startTime.Value;
+			return $"{Math.Floor(diff.TotalHours)}:{diff.Minutes:00}:{diff.Seconds:00}";
+		}
+
 		internal static string FormatSex(Proto.Sex sex, bool anyAsEmpty = false)
 		{
 			return sex == Proto.Sex.Any ? (anyAsEmpty ? "" : "Ыўсющ") :

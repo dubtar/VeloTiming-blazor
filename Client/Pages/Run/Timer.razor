@@ -1,0 +1,43 @@
+﻿@implements IDisposable
+<span>@time</span>
+
+@code {
+	[Parameter]
+	public DateTime StartTime { get; set; }
+
+	private System.Timers.Timer? timer;
+
+	private string time = "";
+
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
+		timer = new System.Timers.Timer(1000);
+		timer.Elapsed += OnTimerTick;
+		timer.AutoReset = true;
+		timer.Start();
+
+	}
+
+	private void OnTimerTick(Object source, System.Timers.ElapsedEventArgs e)
+	{
+		if (StartTime == DateTime.MinValue)
+		{
+			time = "";
+		}
+		else
+		{
+			time = Utils.FormatTime(DateTime.UtcNow, StartTime);
+		}
+		StateHasChanged();
+	}
+
+	public void Dispose()
+	{
+		if (timer != null)
+		{
+			timer.Stop();
+			timer.Dispose();
+		}
+	}
+}

@@ -2,11 +2,55 @@
 @page "/run"
 @inject IRaceSvc svc
 
+@if (Race == null)
+{
+	<div class="container">Нет активного старта</div>
+}
+else
+{
+	<div class="container flex-fill">
+		<div className="d-flex h-100 flex-column">
+			<div className="d-flex justify-content-between">
+				<h1>@Race.Racename @Race.StartName</h1>
+				if (@Race.StartTime != null) {
+				<Timer start="Race.StartTime.ToDateTime()" />
+				}
+			</div>
+			<div class="flex-fill">
+				<div class="d-flex justify-content-between">
+					@if (Race.StartTime == null)
+					{
+						<button @onclick="@StartRace" class="btn btn-primary m-3">Начать гонку</button>
+					}
+					<!-- TODO: TimeTrialButtons -->
+				</div>
+				@if (Race.StartType == Proto.StartType.Laps)
+				{
+					<div>
+						<LapsTable Results="Results" />
+					</div>
+				}
+				<!-- TODO: TimeTrialTable -->
+			</div>
+			<div class="bg-light">
+				@if (number != null)
+				{
+					<div class="d-inline-block border border-secondary rounded p-3">
+						@number
+					</div>
+				}
+				<div className="text-muted">Space - отметка времени, цифры - ввод номера, Enter - запись введённого номера</div>
+			</div>
+		</div>
+	</div>
+}
+
 @code {
+	const string SOURCE = "UI";
+
 	Proto.RaceInfo? Race;
-	Proto.Result[]? Marks;
-	IDisposable? marksSubscription;
 	IDisposable? raceSubscription;
+	string? number;
 
 
 	protected override Task OnInitializedAsync()
@@ -17,11 +61,6 @@
 			Race = r;
 			StateHasChanged();
 		});
-		marksSubscription = svc.GetResultsSubscription().Subscribe(m =>
-		{
-			Marks = m;
-			StateHasChanged();
-		});
 		return Task.CompletedTask;
 	}
 
@@ -29,7 +68,6 @@
 	{
 		KeyboardHandler.OnDocumentKeyDown -= OnKeyDown;
 		raceSubscription?.Dispose();
-		marksSubscription?.Dispose();
 		return ValueTask.CompletedTask;
 	}
 	private void StartRace()
@@ -40,6 +78,33 @@
 
 	private void OnKeyDown(object? _, KeyboardEvent args)
 	{
-		// TODO
+		if (Race == null || args.Repeat) return;
+		switch(args.Key)
+		{
+			case " ":
+			case "Space":
+				svc.AddTime(SOURCE);
+				break;
+			case var k when k?.Length == 0 && k[0] >= '0' && k[0] <= '9': // digit
+				number = (number ?? "") + k;
+				StateHasChanged();
+				break;
+			case "Backspace":
+			case "Delete":
+				if (!string.IsNullOrEmpty(number))
+				{
+					number = number.Substring(0, number.Length - 1);
+					StateHasChanged();
+				}
+				break;
+			case "Enter":
+				if (!string.IsNullOrEmpty(number))
+				{
+					svc.AddNumber(number, SOURCE);
+					number = null;
+					StateHasChanged();
+				}
+				break;
+		}
 	}
 }

@@ -31,6 +31,8 @@ namespace VeloTiming.Client
 		IObservable<RaceInfo?> GetRaceInfoSubject();
 		IObservable<Result[]> GetResultsSubscription();
 		Task MakeStart(int startId);
+		void AddTime(string source);
+		void AddNumber(string number, string source);
 	}
 
 	internal class RaceSvc: IRaceSvc, IAsyncDisposable
@@ -141,6 +143,7 @@ namespace VeloTiming.Client
 		private void SetActiveStart(RaceInfo? race)
 		{
 			RaceInfo.OnNext(race);
+			_ = LoadResults();
 		}
 
 		public async Task DeactivateStart()
@@ -210,6 +213,15 @@ namespace VeloTiming.Client
 		{
 			var results = await MainClient.GetResultsAsync(new Google.Protobuf.WellKnownTypes.Empty());
 			Results.OnNext(results.Results.ToArray());
+		}
+		public void AddTime(string source)
+		{
+			_ = hubConnection.SendAsync("AddTime", DateTime.UtcNow, source);
+		}
+
+		public void AddNumber(string number, string source)
+		{
+			_ = hubConnection.SendAsync("AddNumber", number, source);
 		}
 	}
 }

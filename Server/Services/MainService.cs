@@ -74,5 +74,20 @@ namespace VeloTiming.Server.Services
 			result.Results.AddRange(results.Select(Utils.ToProto));
 			return Task.FromResult(result);
 		}
+		public override async Task<Empty> MakeStart(MakeStartRequest request, ServerCallContext context)
+		{
+			var raceInfo = raceLogic.GetRaceInfo();
+			if (raceInfo == null) throw new Exception("No Active Start");
+			if (raceInfo.StartId != request.StartId) throw new Exception("Another start is active");
+			var start = await dataContext.Starts.FindAsync(request.StartId);
+			if (start == null) throw new Exception($"Start not found by Id '{request.StartId}'");
+			if (start.RealStart == null)
+			{
+				start.RealStart = DateTime.UtcNow;
+				await dataContext.SaveChangesAsync();
+				raceLogic.StartRun(start.RealStart.Value);
+			}
+			return new Empty();
+		}
 	}
 }

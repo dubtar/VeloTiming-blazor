@@ -22,7 +22,7 @@
 	<script src="_framework/blazor.webassembly.js"></script>
 	<script type="text/javascript">
 		document.addEventListener('keydown', function (e) {
-			var args = { Key: e.key };
+			var args = { Key: e.key, Repeat: e.repeat };
 			DotNet.invokeMethod('VeloTiming.Client', 'DocumentKeyDown', args);
 		});
 	</script>

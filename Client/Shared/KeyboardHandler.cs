@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Web;
-using Microsoft.JSInterop;
+﻿using Microsoft.JSInterop;
 using System;
 
 namespace VeloTiming.Client.Shared
@@ -18,5 +17,6 @@ namespace VeloTiming.Client.Shared
 	public class KeyboardEvent
 	{
 		public string? Key { get; set; }
+		public bool Repeat { get; set; }
 	}
 }
