@@ -22,83 +22,7 @@
 		}
 		else
 		{
-			<EditForm Model="@EditModel" OnValidSubmit="@SaveRider" class="bg-light p-3">
-				<DataAnnotationsValidator />
-
-				@if (EditModel.Id > 0)
-				{
-					<h3>Изменение гонщика</h3>
-				}
-				else
-				{
-					<h3>Добавление гонщика</h3>
-				}
-				<div class="form-row">
-					<div class="form-group col-1">
-						<label for="number">Номер</label>
-						<InputText id="number" @bind-Value="EditModel.Number" class="form-control" DisplayName="Номер" autoFocus="True" />
-						<ValidationMessage For="@(() => EditModel.Number)" />
-					</div>
-					<div class="form-group col-2">
-						<label for="lastname">Фамилия</label>
-						<InputText Name="lastname" @bind-Value="EditModel.LastName" class="form-control" DisplayName="Фамилия" />
-						<ValidationMessage For="@(() => EditModel.LastName)" />
-					</div>
-					<div class="form-group col-2">
-						<label for="firstname">Имя</label>
-						<InputText Name="firstname" @bind-Value="EditModel.FirstName" class="form-control" DisplayName="Имя" />
-						<ValidationMessage For="@(() => EditModel.FirstName)" />
-					</div>
-					<div class="form-group col-1">
-						<label for="sex">Пол</label>
-						<div>
-							<InputRadioGroup id="sex" @bind-Value="EditModel.Sex">
-								<div class="form-check form-check-inline">
-									<InputRadio Value="Proto.Sex.Male" id="sexm" class="form-check-input" />
-									<label class="form-check-label" for="sexm">М</label>
-								</div>
-								<div class="form-check form-check-inline">
-									<InputRadio Value="Proto.Sex.Female" id="sexf" class="form-check-input" />
-									<label class="form-check-label" for="sexf">Ж</label>
-								</div>
-							</InputRadioGroup>
-						</div>
-					</div>
-					<div class="form-group col-1">
-						<label for="YearOfBirth">Г.р.</label>
-						<InputNumber name="YearOfBirth" min="1900" max="@(DateTime.Now.Year)"
-									 @bind-Value="EditModel.YearOfBirth" class="form-control" DisplayName="Год рождения" />
-						<ValidationMessage For="@(() => EditModel.YearOfBirth)" />
-					</div>
-					<div class="form-group col-2">
-						<label for="category">Категория</label>
-						<InputSelect @bind-Value="EditModel.Category" class="form-control">
-							<option value=""></option>
-							@if (Categories != null)
-									{
-								@foreach (var cat in Categories)
-										{
-									<option @key="cat.Id" value="@cat.Code">@cat.Name</option>
-										}
-									}
-						</InputSelect>
-					</div>
-					<div class="form-group col-1">
-						<label for="city">Город</label>
-						<InputText name="city" @bind-Value="EditModel.City" class="form-control" DisplayName="Город" />
-						<ValidationMessage For="@(() => EditModel.City)" />
-					</div>
-					<div class="form-group col-2">
-						<label for="team">Команда</label>
-						<InputText name="team" @bind-Value="EditModel.Team" class="form-control" DisplayName="Команда" />
-						<ValidationMessage For="@(() => EditModel.Team)" />
-					</div>
-				</div>
-				<div class="form-row">
-					<button class="btn btn-primary" type="submit">@(EditModel.Id == 0 ? "Добавить" : "Сохранить")</button>
-					<button class="btn btn-secondary ml-3" @onclick="@(()=> EditModel = null)">Отмена</button>
-				</div>
-			</EditForm>
+			<RiderEdit EditModel="@EditModel"/>
 		}
 		<ImportRiders @ref="importRiders" RaceId="RaceId" OnImported="@(async () => await LoadRiders())" />
 
@@ -261,36 +185,6 @@
 
 	RiderEditModel? EditModel;
 
-	class RiderEditModel
-	{
-		public int Id { get; set; }
-
-		public string Number { get; set; } = "";
-
-		[Required(ErrorMessage = "Имя обязательно")]
-		public string FirstName { get; set; } = "";
-
-		[Required(ErrorMessage = "Фамилия обязательна")]
-		public string LastName { get; set; } = "";
-
-		public Proto.Sex Sex { get; set; }
-
-		public event EventHandler? OnYearChange;
-		private int? yearOfBirth;
-		[YearRange(1900, ErrorMessage = "Год рождения некорректный")]
-		public int? YearOfBirth
-		{
-			get
-			{
-				return yearOfBirth;
-			}
-			set { yearOfBirth = value; OnYearChange?.Invoke(this, new EventArgs()); }
-		}
-
-		public string Category { get; set; } = "";
-		public string City { get; set; } = "";
-		public string Team { get; set; } = "";
-	}
 
 	private void OnYearChange(object? _, EventArgs __)
 	{
@@ -301,7 +195,7 @@
 			return;
 		var category = Categories.FirstOrDefault(c =>
 			(c.MinYearOfBirth != null || c.MaxYearOfBirth != null) && // only categories with years
-			(c.Sex == Proto.Sex.Any || c.Sex == EditModel.Sex) &&
+			(c.Sex == Proto.Sex.Any || c.Sex == Utils.ToEditModel.Sex) &&
 			(c.MinYearOfBirth == null || c.MinYearOfBirth <= EditModel.YearOfBirth) &&
 			(c.MaxYearOfBirth == null || c.MaxYearOfBirth >= EditModel.YearOfBirth)
 		);

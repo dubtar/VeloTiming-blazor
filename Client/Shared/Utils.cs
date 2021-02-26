@@ -31,5 +31,12 @@ namespace VeloTiming.Client
 				sex == Proto.Sex.Female ? "Æåí" :
 				sex.ToString();
 		}
+		internal static Proto.Sex ToProto(this Pages.Races.Sex sex)
+		{
+			return sex == Pages.Races.Sex.Any ? Proto.Sex.Any :
+				sex == Pages.Races.Sex.Male ? Proto.Sex.Male :
+				sex == Pages.Races.Sex.Female ? Proto.Sex.Female :
+				throw new Exception($"Unknown sex '{sex}'");
+		}
 	}
 }
