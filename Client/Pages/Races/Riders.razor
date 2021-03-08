@@ -126,7 +126,7 @@
 			City = rider?.City ?? "",
 			FirstName = rider?.FirstName ?? "",
 			LastName = rider?.LastName ?? "",
-			Sex = rider?.Sex ?? Proto.Sex.Any,
+			Sex = Utils.ToEdit(rider?.Sex ?? Proto.Sex.Any),
 			Team = rider?.Team ?? "",
 			YearOfBirth = rider?.YearOfBirth
 		};
@@ -195,7 +195,7 @@
 			return;
 		var category = Categories.FirstOrDefault(c =>
 			(c.MinYearOfBirth != null || c.MaxYearOfBirth != null) && // only categories with years
-			(c.Sex == Proto.Sex.Any || c.Sex == Utils.ToEditModel.Sex) &&
+			(c.Sex == Proto.Sex.Any || c.Sex == Utils.ToProto(EditModel.Sex)) &&
 			(c.MinYearOfBirth == null || c.MinYearOfBirth <= EditModel.YearOfBirth) &&
 			(c.MaxYearOfBirth == null || c.MaxYearOfBirth >= EditModel.YearOfBirth)
 		);
