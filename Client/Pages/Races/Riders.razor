@@ -20,9 +20,9 @@
 			<button class="btn btn-outline-primary my-3" @onclick="@(() => EditRider(null))">Добавить участника (Ins)</button>
 			<button class="btn btn-secondary float-right" @onclick="@ShowImport">Импорт участников</button>
 		}
-		else
+		else if (EditModel.Id == 0)
 		{
-			<RiderEdit EditModel="@EditModel"/>
+			<RiderEdit EditModel="@EditModel" Categories="@Categories" Cancel="@(_ => EditModel = null)" SaveRider="@SaveRider" />
 		}
 		<ImportRiders @ref="importRiders" RaceId="RaceId" OnImported="@(async () => await LoadRiders())" />
 
@@ -61,8 +61,15 @@
 								<button class="btn btn-outline-danger" @onclick="() => DeleteRider(rider.Id)">Удалить</button>
 							</div>
 						</td>
-
 					</tr>
+					@if (EditModel?.Id == rider.Id)
+					{
+						<tr>
+							<td colspan="10">
+								<RiderEdit EditModel="@EditModel" Categories="@Categories" Cancel="@(_ => EditModel = null)" SaveRider="@SaveRider" />
+							</td>
+						</tr>
+					}
 				}
 			</tbody>
 		</table>
@@ -75,7 +82,7 @@
 
 
 	IList<Proto.Rider>? RidersList;
-	IList<Proto.RaceCategory>? Categories;
+	IList<RiderEditCategory>? Categories;
 	string? Error;
 	ImportRiders? importRiders;
 
@@ -107,7 +114,7 @@
 			var response = client.getByRaceAsync(new Proto.GetRidersByRaceRequest { RaceId = RaceId });
 			var catResponse = raceSvc.GetRaceCategories(RaceId);
 			RidersList = (await response).Riders;
-			Categories = (await catResponse);
+			Categories = (await catResponse).Select(c => new RiderEditCategory(c)).ToList();
 		}
 		catch (Exception ex)
 		{
@@ -130,7 +137,7 @@
 			Team = rider?.Team ?? "",
 			YearOfBirth = rider?.YearOfBirth
 		};
-		EditModel.OnYearChange += OnYearChange;
+		StateHasChanged();
 	}
 
 	private async Task DeleteRider(int riderId)
@@ -159,7 +166,7 @@
 				YearOfBirth = EditModel.YearOfBirth,
 				LastName = EditModel.LastName,
 				FirstName = EditModel.FirstName,
-				Sex = EditModel.Sex,
+				Sex = EditModel.Sex.ToProto(),
 				Category = EditModel.Category ?? "",
 				City = EditModel.City ?? "",
 				Team = EditModel.Team ?? ""
@@ -175,6 +182,7 @@
 				await client.updateAsync(rider);
 			}
 			EditModel = null;
+			RidersList = null;
 			_ = LoadRiders();
 		}
 		catch (Exception ex)
@@ -185,25 +193,6 @@
 
 	RiderEditModel? EditModel;
 
-
-	private void OnYearChange(object? _, EventArgs __)
-	{
-		if (EditModel == null || !string.IsNullOrEmpty(EditModel.Category) ||
-			EditModel.YearOfBirth == null || EditModel.YearOfBirth < 1900 ||
-			EditModel.YearOfBirth > DateTime.Now.Year ||
-			Categories == null)
-			return;
-		var category = Categories.FirstOrDefault(c =>
-			(c.MinYearOfBirth != null || c.MaxYearOfBirth != null) && // only categories with years
-			(c.Sex == Proto.Sex.Any || c.Sex == Utils.ToProto(EditModel.Sex)) &&
-			(c.MinYearOfBirth == null || c.MinYearOfBirth <= EditModel.YearOfBirth) &&
-			(c.MaxYearOfBirth == null || c.MaxYearOfBirth >= EditModel.YearOfBirth)
-		);
-		if (category != null)
-		{
-			EditModel.Category = category.Code;
-		}
-	}
 
 	private void OnKeyDown(object? _, KeyboardEvent args)
 	{

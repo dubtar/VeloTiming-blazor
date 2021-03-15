@@ -30,11 +30,11 @@
 			<div>
 				<InputRadioGroup id="sex" @bind-Value="EditModel.Sex">
 					<div class="form-check form-check-inline">
-						<InputRadio Value="Proto.Sex.Male" id="sexm" class="form-check-input" />
+						<InputRadio Value="Sex.Male" id="sexm" class="form-check-input" />
 						<label class="form-check-label" for="sexm">М</label>
 					</div>
 					<div class="form-check form-check-inline">
-						<InputRadio Value="Proto.Sex.Female" id="sexf" class="form-check-input" />
+						<InputRadio Value="Sex.Female" id="sexf" class="form-check-input" />
 						<label class="form-check-label" for="sexf">Ж</label>
 					</div>
 				</InputRadioGroup>
@@ -77,11 +77,43 @@
 </EditForm>
 
 @code {
-	RiderEditModel EditModel = null!;
+	private RiderEditModel editModel = null!;
+	[Parameter]
+	public RiderEditModel EditModel
+	{
+		get => editModel; set
+		{
+			editModel = value;
+				editModel.OnYearChange += OnYearChange;
+		}
+	}
 
 	[Parameter]
 	public EventCallback SaveRider { get; set; }
 
 	[Parameter]
 	public EventCallback Cancel { get; set; }
+
+	[Parameter]
+	public IEnumerable<RiderEditCategory> Categories { get; set; } = null!;
+
+	private void OnYearChange(object? _, EventArgs __)
+	{
+		if (EditModel == null || !string.IsNullOrEmpty(EditModel.Category) ||
+			EditModel.YearOfBirth == null || EditModel.YearOfBirth < 1900 ||
+			EditModel.YearOfBirth > DateTime.Now.Year ||
+			Categories == null)
+			return;
+		var category = Categories.FirstOrDefault(c =>
+			(c.MinYearOfBirth != null || c.MaxYearOfBirth != null) && // only categories with years
+			(c.Sex == Sex.Any || c.Sex == EditModel.Sex) &&
+			(c.MinYearOfBirth == null || c.MinYearOfBirth <= EditModel.YearOfBirth) &&
+			(c.MaxYearOfBirth == null || c.MaxYearOfBirth >= EditModel.YearOfBirth)
+		);
+		if (category != null)
+		{
+			EditModel.Category = category.Code;
+		}
+	}
+
 }
