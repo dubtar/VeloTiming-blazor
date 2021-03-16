@@ -1,9 +1,10 @@
 ﻿@implements IDisposable
-<span>@time</span>
+
+<div>@time</div>
 
 @code {
 	[Parameter]
-	public DateTime StartTime { get; set; }
+	public DateTime? StartTime { get; set; }
 
 	private System.Timers.Timer? timer;
 
@@ -16,7 +17,6 @@
 		timer.Elapsed += OnTimerTick;
 		timer.AutoReset = true;
 		timer.Start();
-
 	}
 
 	private void OnTimerTick(Object source, System.Timers.ElapsedEventArgs e)

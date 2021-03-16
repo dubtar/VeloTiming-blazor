@@ -9,11 +9,11 @@
 else
 {
 	<div class="container flex-fill">
-		<div className="d-flex h-100 flex-column">
-			<div className="d-flex justify-content-between">
+		<div class="d-flex h-100 flex-column">
+			<div class="d-flex justify-content-between">
 				<h1>@Race.Racename @Race.StartName</h1>
-				if (@Race.StartTime != null) {
-				<Timer start="Race.StartTime.ToDateTime()" />
+				@if (@Race.StartTime != null) {
+					<Timer StartTime="@Race.StartTime.ToDateTime()"/>
 				}
 			</div>
 			<div class="flex-fill">
@@ -22,12 +22,12 @@ else
 					{
 						<button @onclick="@StartRace" class="btn btn-primary m-3">Начать гонку</button>
 					}
-					<!-- TODO: TimeTrialButtons -->
+					 <!--TODO: TimeTrialButtons -->
 				</div>
 				@if (Race.StartType == Proto.StartType.Laps)
 				{
 					<div>
-						<LapsTable Results="Results" />
+						<LapsTable />
 					</div>
 				}
 				<!-- TODO: TimeTrialTable -->
@@ -39,7 +39,7 @@ else
 						@number
 					</div>
 				}
-				<div className="text-muted">Space - отметка времени, цифры - ввод номера, Enter - запись введённого номера</div>
+				<div class="text-muted">Space - отметка времени, цифры - ввод номера, Enter - запись введённого номера</div>
 			</div>
 		</div>
 	</div>
@@ -70,6 +70,7 @@ else
 		raceSubscription?.Dispose();
 		return ValueTask.CompletedTask;
 	}
+
 	private void StartRace()
 	{
 		if (Race != null)
@@ -85,7 +86,7 @@ else
 			case "Space":
 				svc.AddTime(SOURCE);
 				break;
-			case var k when k?.Length == 0 && k[0] >= '0' && k[0] <= '9': // digit
+			case var k when k?.Length > 0 && k[0] >= '0' && k[0] <= '9': // digit
 				number = (number ?? "") + k;
 				StateHasChanged();
 				break;
