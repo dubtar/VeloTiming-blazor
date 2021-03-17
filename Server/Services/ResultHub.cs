@@ -10,13 +10,13 @@ namespace VeloTiming.Server.Hubs
 	{
 		Task ActiveStart(Proto.RaceInfo? race);
 		Task RaceStarted(Proto.RaceInfo race);
-		Task ResultAdded(Result mark); // TODO: replace with Proto.Result
-		Task ResultUpdated(Result mark); // TODO: replace with Proto.Result
+		Task ResultAdded(Proto.Result mark); // TODO: replace with Proto.Result
+		Task ResultUpdated(Proto.Result mark); // TODO: replace with Proto.Result
 
 	}
 	public class ResultHub : Hub<IResultHub>
 	{
-		public readonly IRaceLogic raceService;
+		private readonly IRaceLogic raceService;
 		public ResultHub(IRaceLogic raceService)
 		{
 			this.raceService = raceService;

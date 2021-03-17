@@ -2,48 +2,51 @@
 @inject IRaceSvc svc
 
 <table class="table table-striped table-hover">
-	<thead>
-		<tr>
-			<th>Круг</th>
-			<th>Место</th>
-			<th>Время</th>
-			<th>Номер</th>
-			<th>Гонщик</th>
-			<th>&nbsp;</th>
-		</tr>
-	</thead>
-	<tbody>
-		@if (Marks != null)
-			@foreach (var mark in Marks)
-			{
-				<tr key=@mark.Id>
-					<td>@mark.Lap</td>
-					<td>@mark.Place</td>
-					<td>@Utils.FormatTime(mark.Time)</td>
-					<td>@mark.Number</td>
-					<td>@mark.Rider</td>
-					<td><small>@Utils.FormatTime(mark.Time ?? mark.CreatedOn)</small></td>
-				</tr>
-			}
-	</tbody>
+    <thead>
+    <tr>
+        <th>Круг</th>
+        <th>Место</th>
+        <th>Время</th>
+        <th>Номер</th>
+        <th>Гонщик</th>
+        <th>&nbsp;</th>
+    </tr>
+    </thead>
+    <tbody>
+    @if (marks != null)
+    {
+        @foreach (var mark in marks)
+        {
+            <tr key=@mark.Id>
+                <td>@mark.Lap</td>
+                <td>@mark.Place</td>
+                <td>@Utils.FormatTime(mark.Time)</td>
+                <td>@mark.Number</td>
+                <td>@mark.Rider</td>
+                <td>
+                    <small>@Utils.FormatTime(mark.Time ?? mark.CreatedOn)</small>
+                </td>
+            </tr>
+        }
+    }
+    </tbody>
 </table>
 
 @code {
 
-	Proto.Result[]? Marks;
-	IDisposable? marksSubscription;
+    Proto.Result[]? marks;
+    IDisposable? marksSubscription;
 
-	protected override Task OnInitializedAsync()
-	{
-		marksSubscription = svc.GetResultsSubscription().Subscribe(m =>
-		{
-			Marks = m;
-			StateHasChanged();
-		});
-		return Task.CompletedTask;
-	}
-	public void Dispose()
-	{
-		marksSubscription?.Dispose();
-	}
+    protected override Task OnInitializedAsync()
+    {
+        marksSubscription = svc.GetResultsSubscription().Subscribe(m => {
+            marks = m;
+            StateHasChanged();
+        });
+        return Task.CompletedTask;
+    }
+    public void Dispose()
+    {
+        marksSubscription?.Dispose();
+    }
 }

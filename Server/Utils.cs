@@ -49,7 +49,7 @@ namespace VeloTiming.Server
 			return raceInfo == null ? null :
 				new Proto.RaceInfo
 				{
-					RaceId = raceInfo.StartId,
+					RaceId = raceInfo.RaceId,
 					Racename = raceInfo.RaceName,
 					StartId = raceInfo.StartId,
 					StartName = raceInfo.StartName,
@@ -65,12 +65,12 @@ namespace VeloTiming.Server
 				CreatedOn = result.CreatedOn.ToTimestamp(),
 				Id = result.Id,
 				Lap = result.Lap,
-				Number = result.Number,
-				NumberSource = result.NumberSource,
+				Number = result.Number ?? "",
+				NumberSource = result.NumberSource ?? "",
 				Place = result.Place,
 				Time = result.Time.ToTimestamp(),
-				TimeSource = result.TimeSource,
-				Rider = result.Name
+				TimeSource = result.TimeSource ?? "",
+				Rider = result.Name ?? ""
 			};
 		}
 	}

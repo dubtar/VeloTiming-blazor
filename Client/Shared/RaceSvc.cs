@@ -40,11 +40,11 @@ namespace VeloTiming.Client
 		private readonly GrpcChannel channel;
 		private readonly HubConnection hubConnection;
 
-		private readonly BehaviorSubject<RaceInfo?> RaceInfo = new BehaviorSubject<RaceInfo?>(null);
-		public IObservable<RaceInfo?> GetRaceInfoSubject() => RaceInfo;
+		private readonly BehaviorSubject<RaceInfo?> raceInfo = new BehaviorSubject<RaceInfo?>(null);
+		public IObservable<RaceInfo?> GetRaceInfoSubject() => raceInfo;
 
-		private readonly BehaviorSubject<Result[]> Results = new BehaviorSubject<Result[]>(new Result[0]);
-		public IObservable<Result[]> GetResultsSubscription() => Results;
+		private readonly BehaviorSubject<Result[]> results = new BehaviorSubject<Result[]>(new Result[0]);
+		public IObservable<Result[]> GetResultsSubscription() => results;
 
 		public RaceSvc(GrpcChannel channel, NavigationManager navigationManager)
 		{
@@ -66,13 +66,13 @@ namespace VeloTiming.Client
 			_ = LoadResults();
 		}
 
-		private Races.RacesClient? _client;
+		private Races.RacesClient? client;
 		private Races.RacesClient Client =>
-			_client ??= new Races.RacesClient(channel);
+			client ??= new Races.RacesClient(channel);
 
-		private Main.MainClient? _mainClient;
+		private Main.MainClient? mainClient;
 		private Main.MainClient MainClient =>
-			_mainClient ??= new Main.MainClient(channel);
+			mainClient ??= new Main.MainClient(channel);
 
 		public async Task<Race> GetRace(int raceId)
 		{
@@ -111,9 +111,9 @@ namespace VeloTiming.Client
 		}
 
 
-		private Starts.StartsClient? _startsClient;
+		private Starts.StartsClient? startsClient;
 		private Starts.StartsClient StartsClient =>
-			_startsClient ??= new Starts.StartsClient(channel);
+			startsClient ??= new Starts.StartsClient(channel);
 
 		public async Task<IList<Start>> GetStarts(int raceId)
 		{
@@ -142,13 +142,13 @@ namespace VeloTiming.Client
 
 		private void SetActiveStart(RaceInfo? race)
 		{
-			RaceInfo.OnNext(race);
+			raceInfo.OnNext(race);
 			_ = LoadResults();
 		}
 
 		public async Task DeactivateStart()
 		{
-			if (RaceInfo.Value != null)
+			if (raceInfo.Value != null)
 				await MainClient.DeactivateStartAsync(new Google.Protobuf.WellKnownTypes.Empty());
 		}
 
@@ -171,48 +171,48 @@ namespace VeloTiming.Client
 		private void ResultAdded(Result result)
 		{
 			bool inserted = false;
-			var results = Results.Value.ToList();
+			var res = this.results.Value.ToList();
 			var newResTime = GetResultTime(result);
-			for (var i = 0; i < results.Count; i++)
+			for (var i = 0; i < res.Count; i++)
 			{
-				var curRes = results[i];
+				var curRes = res[i];
 				var curResTime = GetResultTime(curRes);
 				if (curResTime > newResTime)
 				{
-					results.Insert(i, result);
+					res.Insert(i, result);
 					inserted = true;
 					break;
 				}
 			}
 			if (!inserted)
 			{
-				results.Add(result);
+				res.Add(result);
 			}
-			Results.OnNext(results.ToArray());
+			this.results.OnNext(res.ToArray());
 		}
 
 		private void ResultUpdated(Result result)
 		{
-			var results = Results.Value.ToList();
-			var ind = results.FindIndex(r => r.Id == result.Id);
+			var res = this.results.Value.ToList();
+			var ind = res.FindIndex(r => r.Id == result.Id);
 			if (ind >= 0)
 			{
-				var timeChanged = GetResultTime(result) != GetResultTime(results[ind]);
-				results[ind] = result;
-				if (timeChanged) results.Sort((a, b) => (int)(GetResultTime(a).Ticks - GetResultTime(b).Ticks));
-				Results.OnNext(results.ToArray());
+				var timeChanged = GetResultTime(result) != GetResultTime(res[ind]);
+				res[ind] = result;
+				if (timeChanged) res.Sort((a, b) => (int)(GetResultTime(a).Ticks - GetResultTime(b).Ticks));
+				this.results.OnNext(res.ToArray());
 			}
 		}
 
-		public static DateTime GetResultTime(Result result)
+		private static DateTime GetResultTime(Result result)
 		{
 			return result.Time?.ToDateTime() ?? result.CreatedOn.ToDateTime();
 		}
 
-		public async Task LoadResults()
+		private async Task LoadResults()
 		{
-			var results = await MainClient.GetResultsAsync(new Google.Protobuf.WellKnownTypes.Empty());
-			Results.OnNext(results.Results.ToArray());
+			var res = await MainClient.GetResultsAsync(new Google.Protobuf.WellKnownTypes.Empty());
+			this.results.OnNext(res.Results.ToArray());
 		}
 		public void AddTime(string source)
 		{

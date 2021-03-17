@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace VeloTiming.Server.Data
 {
-	public class Result
+	public sealed class Result
 	{
 		public string Id { get; set; } = Guid.NewGuid().ToString();
 		public DateTime? Time { get; set; }
@@ -20,7 +20,7 @@ namespace VeloTiming.Server.Data
 
 		[ForeignKey("Start")]
 		public int StartId { get; set; }
-		public virtual Start Start { get; set; } = null!;
+		public Start Start { get; set; } = null!;
 
 		internal static Result Create(ITimeService timeService, int startId)
 		{

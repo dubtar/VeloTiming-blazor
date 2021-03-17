@@ -27,8 +27,8 @@ namespace VeloTiming.Server.Logic
 
 	public class RaceLogic : IRaceLogic
 	{
-		private RaceInfo? Race;
-		private readonly List<Result> Results = new List<Result>();
+		private RaceInfo? race;
+		private readonly List<Result> results = new List<Result>();
 		private readonly IServiceProvider serviceProvider;
 		private readonly IHubContext<ResultHub, IResultHub> hub;
 		private readonly IBackgroundTaskQueue taskQueue;
@@ -38,37 +38,35 @@ namespace VeloTiming.Server.Logic
 		{
 			this.serviceProvider = serviceProvider;
 
-			hub = serviceProvider.GetService<IHubContext<ResultHub, IResultHub>>() ?? throw new Exception("Cannnot resolve IResultHub");
-			taskQueue = serviceProvider.GetService<IBackgroundTaskQueue>() ?? throw new Exception("Cannot resolve IBackgroudTaskQueue");
+			hub = serviceProvider.GetService<IHubContext<ResultHub, IResultHub>>() ?? throw new Exception("Cannot resolve IResultHub");
+			taskQueue = serviceProvider.GetService<IBackgroundTaskQueue>() ?? throw new Exception("Cannot resolve IBackgroundTaskQueue");
 			timeService = serviceProvider.GetService<ITimeService>() ?? throw new Exception("Cannot resolve ITimeService");
 			_ = Init();
 		}
 
 		public RaceInfo? GetRaceInfo()
 		{
-			return Race;
+			return race;
 		}
 		private async Task Init()
 		{
-			using (var serviceScope = serviceProvider.CreateScope())
+			using var serviceScope = serviceProvider.CreateScope();
+			try
 			{
-				try
+				var dataContext = serviceScope.ServiceProvider.GetRequiredService<RacesDbContext>();
+				var activeStart = await dataContext.Starts.Include(s => s.Race).FirstOrDefaultAsync(s => s.IsActive);
+				if (activeStart != null)
 				{
-					var dataContext = serviceScope.ServiceProvider.GetRequiredService<RacesDbContext>();
-					var activeStart = await dataContext.Starts.Include(s => s.Race).FirstOrDefaultAsync(s => s.IsActive);
-					if (activeStart != null)
-					{
-						var riders = await BuildNumbersDictionary(dataContext, activeStart.Id);
-						Race = new RaceInfo(activeStart, riders);
-						// Load Marks
-						Results.Clear();
-						Results.AddRange(dataContext.Results.Where(r => r.StartId == activeStart.Id));
-					}
+					var riders = await BuildNumbersDictionary(dataContext, activeStart.Id);
+					race = new RaceInfo(activeStart, riders);
+					// Load Marks
+					results.Clear();
+					results.AddRange(dataContext.Results.Where(r => r.StartId == activeStart.Id));
 				}
-				catch (Exception ex)
-				{
-					Console.Error.WriteLine(ex.ToString());
-				}
+			}
+			catch (Exception ex)
+			{
+				await Console.Error.WriteLineAsync(ex.ToString());
 			}
 		}
 
@@ -83,34 +81,37 @@ namespace VeloTiming.Server.Logic
 
 		public async Task SetActiveStart(Start? start, Dictionary<string, string>? numbers = null)
 		{
-			if (start?.Id == Race?.StartId) return;
+			if (start?.Id == race?.StartId) return;
 
-			if (Race != null)
+			if (race != null)
 			{
 				// remove active flag on active start and set end date
 				using var scope = serviceProvider.CreateScope();
 				var dataContext = scope.ServiceProvider.GetRequiredService<RacesDbContext>();
-				var startEntity = await dataContext.Starts.FindAsync(Race.StartId);
+				var startEntity = await dataContext.Starts.FindAsync(race.StartId);
 				if (startEntity != null)
 				{
 					startEntity.IsActive = false;
 					startEntity.End = DateTime.UtcNow;
 					await dataContext.SaveChangesAsync();
 				}
-				Race = null;
+				race = null;
 			}
-			Race = start == null ? null : new RaceInfo(start, numbers);
-			await hub.Clients.All.ActiveStart(Race.ToProto());
+			race = start == null ? null : new RaceInfo(start, numbers);
+			await hub.Clients.All.ActiveStart(race.ToProto());
 		}
 
 		public IEnumerable<Result> GetMarks()
 		{
-			return Results.ToArray();
+			lock (results)
+			{
+				return results.ToArray();
+			}
 		}
 
 		private bool RaceIsRunning()
 		{
-			return Race != null && Race.Start != null;
+			return race is { Start: {} };
 		}
 
 		public void AddTime(DateTime time, string source)
@@ -118,8 +119,8 @@ namespace VeloTiming.Server.Logic
 			if (RaceIsRunning())
 			{
 				time = time.ToLocalTime();
-				taskQueue.QueueBackgroundWorkItem((token) =>
-				   ProcessAddMark(time, null, source, token)
+				taskQueue.QueueBackgroundWorkItem((_) =>
+				   ProcessAddMark(time, null, source)
 				);
 			}
 		}
@@ -127,16 +128,16 @@ namespace VeloTiming.Server.Logic
 		public void AddNumber(string number, string source)
 		{
 			if (RaceIsRunning())
-				taskQueue.QueueBackgroundWorkItem((token) =>
-				   ProcessAddMark(null, number, source, token)
+				taskQueue.QueueBackgroundWorkItem((_) =>
+				   ProcessAddMark(null, number, source)
 				);
 		}
 
 		public void AddNumberAndTime(string number, DateTime time, string source)
 		{
 			if (RaceIsRunning())
-				taskQueue.QueueBackgroundWorkItem((token) =>
-					ProcessAddMark(time, number, source, token)
+				taskQueue.QueueBackgroundWorkItem((_) =>
+					ProcessAddMark(time, number, source)
 				);
 		}
 
@@ -149,39 +150,39 @@ namespace VeloTiming.Server.Logic
 
 		public void StartRun(DateTime date)
 		{
-			if (Race != null && Race.Start == null)
+			if (race is { Start: null })
 			{
-				Race.Start = date;
-				lock (Results)
-					Results.Clear();
+				race.Start = date;
+				lock (results)
+					results.Clear();
 				_ = SendRaceStarted();
 			}
 		}
 		#region send signalr messages to clients
 		private async Task SendRaceStarted()
 		{
-			if (Race != null)
-				await hub.Clients.All.RaceStarted(Race.ToProto()!);
+			if (race != null)
+				await hub.Clients.All.RaceStarted(race.ToProto()!);
 		}
 
 		private async Task SendResultAdded(Result mark)
 		{
-			await hub.Clients.All.ResultAdded(mark);
+			await hub.Clients.All.ResultAdded(mark.ToProto());
 		}
 
 		private async Task SendResultUpdated(Result mark)
 		{
-			await hub.Clients.All.ResultUpdated(mark);
+			await hub.Clients.All.ResultUpdated(mark.ToProto());
 		}
 		#endregion
 
 		#region Process inputs methods. Main logic is here
-		const int MARKS_MERGE_SECONDS = 30;
-		private Task ProcessAddMark(DateTime? time, string? number, string source, System.Threading.CancellationToken token)
+		private const int MARKS_MERGE_SECONDS = 30;
+		private Task ProcessAddMark(DateTime? time, string? number, string source)
 		{
-			if (Race == null) throw new Exception("Race not started");
+			if (race == null) throw new Exception("Race not started");
 			string? riderName = null;
-			if (!string.IsNullOrEmpty(number) && !Race.Numbers.TryGetValue(number, out riderName))
+			if (!string.IsNullOrEmpty(number) && !race.Numbers.TryGetValue(number, out riderName))
 			{
 				// Number is not in race numbers - ignore mark
 				return Task.CompletedTask;
@@ -189,15 +190,15 @@ namespace VeloTiming.Server.Logic
 
 			DateTime markTime = time ?? timeService.Now;
 			// Do not add mark if less minute from start than delay
-			if (time.HasValue && Race.Start.HasValue && (time.Value - Race.Start.Value).TotalMinutes < Race.DelayMarksAfterStartMinutes)
+			if (time.HasValue && race.Start.HasValue && (time.Value - race.Start.Value).TotalMinutes < race.DelayMarksAfterStartMinutes)
 				return Task.CompletedTask;
 
 			Task? task = null;
-			lock (Results)
+			lock (results)
 			{
 				var leftTime = markTime.AddSeconds(-MARKS_MERGE_SECONDS);
 				var rightTime = markTime.AddSeconds(5);
-				var nearbyResults = Results.SkipWhile(m => (m.Time ?? m.CreatedOn) < leftTime).TakeWhile(m => (m.Time ?? m.CreatedOn) <= rightTime);
+				var nearbyResults = results.SkipWhile(m => (m.Time ?? m.CreatedOn) < leftTime).TakeWhile(m => (m.Time ?? m.CreatedOn) <= rightTime);
 				bool reorder = false;
 				bool added = false;
 				Result? result = null;
@@ -209,7 +210,7 @@ namespace VeloTiming.Server.Logic
 					result = nearbyResults.FirstOrDefault(r => !r.Time.HasValue);
 					if (result == null)
 					{
-						Results.Add(result = Result.Create(timeService, Race.StartId)); // add new time withough
+						results.Add(result = Result.Create(timeService, race.StartId)); // add new time without number
 						added = true;
 					}
 					result.Time = time;
@@ -222,7 +223,7 @@ namespace VeloTiming.Server.Logic
 					result = nearbyResults.FirstOrDefault(r => string.IsNullOrWhiteSpace(r.Number));
 					if (result == null)
 					{
-						Results.Add(result = Result.Create(timeService, Race.StartId));
+						results.Add(result = Result.Create(timeService, race.StartId));
 						reorder = added = true;
 					}
 					result.Number = number;
@@ -234,10 +235,10 @@ namespace VeloTiming.Server.Logic
 					result = nearbyResults.FirstOrDefault(r => r.Number == number);
 					if (result == null)
 					{
-						result = Result.Create(timeService, Race.StartId);
+						result = Result.Create(timeService, race.StartId);
 						result.Number = number;
 						result.NumberSource = source;
-						Results.Add(result);
+						results.Add(result);
 						reorder = added = true;
 					}
 					else
@@ -260,16 +261,10 @@ namespace VeloTiming.Server.Logic
 						Time = time
 					});
 					if (reorder)
-						Results.Sort(delegate (Result a, Result b)
-						{
-							return (a.Time ?? a.CreatedOn.AddSeconds(MARKS_MERGE_SECONDS)).CompareTo(b.Time ?? b.CreatedOn.AddSeconds(MARKS_MERGE_SECONDS));
-						});
+						results.Sort((a, b) => (a.Time ?? a.CreatedOn.AddSeconds(MARKS_MERGE_SECONDS)).CompareTo(b.Time ?? b.CreatedOn.AddSeconds(MARKS_MERGE_SECONDS)));
 					ProcessPlace(result);
 
-					if (added)
-						task = SendResultAdded(result);
-					else
-						task = SendResultUpdated(result);
+					task = added ? SendResultAdded(result) : SendResultUpdated(result);
 					task = Task.WhenAll(task, StoreResult(result));
 				}
 			}
@@ -278,8 +273,8 @@ namespace VeloTiming.Server.Logic
 
 		private void ProcessPlace(Result result, int? index = null)
 		{
-			if (index == null) index = Results.IndexOf(result);
-			if (index == null || index < 0) return;
+			index ??= results.IndexOf(result);
+			if (index < 0) return;
 			if (string.IsNullOrEmpty(result.Number))
 			{
 				result.Lap = -1;
@@ -290,7 +285,7 @@ namespace VeloTiming.Server.Logic
 			List<int> places = new List<int>();
 			for (int i = 0; i < index; i++)
 			{
-				var res = Results[i];
+				var res = results[i];
 				if (res.IsIgnored || string.IsNullOrEmpty(result.Number)) continue;
 				int curLap;
 				if (res.Number == result.Number)
@@ -306,23 +301,22 @@ namespace VeloTiming.Server.Logic
 			result.Lap = lap + 1;
 			result.Place = places.Count > lap ? places[lap] + 1 : 1;
 			// recalculate all results after that
-			for (int i = index.Value + 1; i < Results.Count; i++)
-				ProcessPlace(Results[i], i);
+			for (int i = index.Value + 1; i < results.Count; i++)
+				ProcessPlace(results[i], i);
 		}
 
 		private async Task StoreResult(Result result)
 		{
-			if (result == null || Race == null) return;
-			using (var scope = serviceProvider.CreateScope())
-			{
-				var resultService = scope.ServiceProvider.GetService<IResultLogic>() ?? throw new Exception($"Cannot resolve {nameof(IResultLogic)}");
-				await resultService.AddOrUpdateResult(result);
-			}
+			if (race == null) return;
+			using var scope = serviceProvider.CreateScope();
+			var resultService = scope.ServiceProvider.GetService<IResultLogic>() ?? throw new Exception($"Cannot resolve {nameof(IResultLogic)}");
+			await resultService.AddOrUpdateResult(result);
 		}
 
+		// ReSharper disable twice UnusedParameter.Local
 		private Task ProcessUpdateMark(Result mark, System.Threading.CancellationToken token)
 		{
-			lock (Results)
+			lock (results)
 			{
 				// TODO
 			}
@@ -352,6 +346,6 @@ public class RaceInfo
 	public string StartName { get; }
 	public DateTime? Start { get; set; }
 	public int DelayMarksAfterStartMinutes { get; }
-	public ReadOnlyDictionary<string, string> Numbers { get; private set; }
-	public StartType Type { get; set; }
+	public ReadOnlyDictionary<string, string> Numbers { get; }
+	public StartType Type { get; }
 }

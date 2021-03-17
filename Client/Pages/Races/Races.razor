@@ -2,7 +2,7 @@
 @page "/races"
 
 @inject IRaceSvc svc
-@inject NavigationManager NavigationManager
+@inject NavigationManager navigationManager
 
 <div class="container">
 	<h1>Гонки</h1>
@@ -38,7 +38,7 @@
 					<td>@Utils.FormatDate(race.Date)</td>
 					<td>@race.Name</td>
 					<td>@race.Description</td>
-					<td @onclick=@(e => {}) @onclick:stopPropagation=true>
+					<td @onclick:stopPropagation=true @onclick=@(e => {}) >
 						<div>
 							<NavLink class="btn btn-outline-primary" href=@($"/races/{raceId}")>Перейти</NavLink>
 							<NavLink class="btn btn-outline-warning" href=@($"/races/edit/{raceId}")>Изменить</NavLink>
@@ -76,7 +76,7 @@
 
 	protected void OpenRace(int raceId)
 	{
-		NavigationManager.NavigateTo($"/races/{raceId}");
+		navigationManager.NavigateTo($"/races/{raceId}");
 	}
 
 	protected async Task DeleteRace(int raceId)
