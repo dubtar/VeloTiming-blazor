@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -275,7 +274,7 @@ namespace VeloTiming.Server.Logic
 			return task == null ? logTask : Task.WhenAll(task, logTask);
 		}
 
-		private Task WriteLog(DateTime? time, string? number, string source)
+		private static Task WriteLog(DateTime? time, string? number, string source)
 		{
 			var val = (time == null ? "" : $"Time: {time} ") + (number == null ? "" : $"Number: {number}");
 			return File.AppendAllLinesAsync("marks.log", new[]

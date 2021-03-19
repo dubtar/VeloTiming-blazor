@@ -15,8 +15,12 @@ namespace VeloTiming.Client
 
 		internal static string FormatTime(Timestamp? time)
 		{
+			return FormatTime(time?.ToDateTime());
+		}
+		public static string FormatTime(DateTime? time)
+		{
 			if (time == null) return string.Empty;
-			return time.ToDateTime().ToLocalTime().ToShortTimeString();
+			return time.Value.ToLocalTime().ToShortTimeString();
 		}
 
 		internal static string FormatTime(DateTime? endTime, DateTime? startTime)

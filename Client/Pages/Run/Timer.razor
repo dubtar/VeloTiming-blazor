@@ -21,14 +21,7 @@
 
 	private void OnTimerTick(Object source, System.Timers.ElapsedEventArgs e)
 	{
-		if (StartTime == DateTime.MinValue)
-		{
-			time = "";
-		}
-		else
-		{
-			time = Utils.FormatTime(DateTime.UtcNow, StartTime);
-		}
+		time = StartTime == DateTime.MinValue ? "" : Utils.FormatTime(DateTime.UtcNow, StartTime);
 		StateHasChanged();
 	}
 

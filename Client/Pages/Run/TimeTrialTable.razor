@@ -1,0 +1,70 @@
+﻿@implements IDisposable
+@inject IRaceSvc svc
+
+<table class="table table-striped table-hover">
+    <thead>
+    <tr>
+        <th>Номер</th>
+        <th>Гонщик</th>
+        <th>Старт</th>
+        <th>Финиш</th>
+        <th>Результат</th>
+        <th>&nbsp;</th>
+    </tr>
+    </thead>
+    <tbody>
+    @if (results != null)
+    {
+        @foreach (var mark in results)
+        {
+            var start = mark.Start.Time.ToDateTime().ToLocalTime();
+            var end = mark.Finish;
+            <tr key=@mark.Start.Number>
+                <td>@mark.Start.Number</td>
+                <td>@mark.Start.Rider</td>
+                <td>@Utils.FormatTime(start)</td>
+                <td>@Utils.FormatTime(mark.Finish)</td>
+                <td>@Utils.FormatTime(end, start)</td>
+                <td> </td>
+            </tr>
+        }
+    }
+    </tbody>
+</table>
+
+@code {
+    IList<TtResult>? results;
+    IDisposable? marksSubscription;
+
+    protected override Task OnInitializedAsync()
+    {
+        marksSubscription = svc.GetResultsSubscription().Subscribe(m => {
+            var dict = new Dictionary<string, TtResult>();
+            foreach (var res in    m.Where(mm => !string.IsNullOrEmpty(mm.Number)))
+            {
+                if (dict.TryGetValue(res.Number, out var r))
+                    r.Finish = res.Time.ToDateTime();
+                else
+                    dict.Add(res.Number, new TtResult(res));
+            }
+            results = dict.Values.OrderBy(v => v.Start.Time).ToList();
+            StateHasChanged();
+        });
+        return Task.CompletedTask;
+    }
+    public void Dispose()
+    {
+        marksSubscription?.Dispose();
+    }
+
+    private class TtResult
+    {
+        public TtResult(Proto.Result start)
+        {
+            Start = start;
+        }
+        
+        public readonly Proto.Result Start;
+        public DateTime? Finish;
+    }
+}
