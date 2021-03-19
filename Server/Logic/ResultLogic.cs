@@ -20,9 +20,11 @@ namespace VeloTiming.Server.Logic
 
 		public async Task AddOrUpdateResult(Result result)
 		{
-			bool exists = await dataContext.Results.AnyAsync(r => r.Id == result.Id);
-			if (exists)
+			var existing = await dataContext.Results.AnyAsync(r => r.Id == result.Id);
+			if (existing)
+			{
 				dataContext.Update(result);
+			}
 			else
 				dataContext.Add(result);
 			await dataContext.SaveChangesAsync();

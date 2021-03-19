@@ -1,11 +1,12 @@
-﻿using Grpc.Net.Client;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.SignalR.Client;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
+using Google.Protobuf.WellKnownTypes;
+using Grpc.Net.Client;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.SignalR.Client;
 using VeloTiming.Proto;
 
 namespace VeloTiming.Client
@@ -76,14 +77,15 @@ namespace VeloTiming.Client
 
 		public async Task<Race> GetRace(int raceId)
 		{
-			var req = new GetRaceRequest() { RaceId = raceId };
+			var req = new GetRaceRequest
+				{ RaceId = raceId };
 			var res = await Client.getRaceAsync(req);
 			return res;
 		}
 
 		public async Task<IList<Race>> GetAllRaces()
 		{
-			var req = await Client.getRacesAsync(new Google.Protobuf.WellKnownTypes.Empty());
+			var req = await Client.getRacesAsync(new Empty());
 			return req.Races;
 		}
 
@@ -149,12 +151,12 @@ namespace VeloTiming.Client
 		public async Task DeactivateStart()
 		{
 			if (raceInfo.Value != null)
-				await MainClient.DeactivateStartAsync(new Google.Protobuf.WellKnownTypes.Empty());
+				await MainClient.DeactivateStartAsync(new Empty());
 		}
 
 		private async Task<RaceInfo?> LoadRaceInfo()
 		{
-			var result = await MainClient.GetRaceInfoAsync(new Google.Protobuf.WellKnownTypes.Empty());
+			var result = await MainClient.GetRaceInfoAsync(new Empty());
 			SetActiveStart(result.RaceInfo);
 			return result.RaceInfo;
 		}
@@ -171,7 +173,7 @@ namespace VeloTiming.Client
 		private void ResultAdded(Result result)
 		{
 			bool inserted = false;
-			var res = this.results.Value.ToList();
+			var res = results.Value.ToList();
 			var newResTime = GetResultTime(result);
 			for (var i = 0; i < res.Count; i++)
 			{
@@ -188,19 +190,23 @@ namespace VeloTiming.Client
 			{
 				res.Add(result);
 			}
-			this.results.OnNext(res.ToArray());
+			results.OnNext(res.ToArray());
 		}
 
 		private void ResultUpdated(Result result)
 		{
-			var res = this.results.Value.ToList();
+			var res = results.Value.ToList();
 			var ind = res.FindIndex(r => r.Id == result.Id);
 			if (ind >= 0)
 			{
 				var timeChanged = GetResultTime(result) != GetResultTime(res[ind]);
 				res[ind] = result;
-				if (timeChanged) res.Sort((a, b) => (int)(GetResultTime(a).Ticks - GetResultTime(b).Ticks));
-				this.results.OnNext(res.ToArray());
+				if (timeChanged) res.Sort((a, b) => {
+					var diff = GetResultTime(a).Ticks - GetResultTime(b).Ticks;
+					return diff == 0 ? 0 :
+						diff < 0 ? -1 : 1;
+				});
+				results.OnNext(res.ToArray());
 			}
 		}
 
@@ -211,8 +217,8 @@ namespace VeloTiming.Client
 
 		private async Task LoadResults()
 		{
-			var res = await MainClient.GetResultsAsync(new Google.Protobuf.WellKnownTypes.Empty());
-			this.results.OnNext(res.Results.ToArray());
+			var res = await MainClient.GetResultsAsync(new Empty());
+			results.OnNext(res.Results.ToArray());
 		}
 		public void AddTime(string source)
 		{

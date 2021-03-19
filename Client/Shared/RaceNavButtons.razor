@@ -16,8 +16,7 @@
 
 	private async Task Deactivate()
 	{
-		if (await jsRuntime.InvokeAsync<bool>("confirm", "Остановить текущий заезд?"))
-		{
+		if (await Utils.Confirm(jsRuntime, "Остановить текущий заезд?"))
 			await svc.DeactivateStart();
 		}
 	}

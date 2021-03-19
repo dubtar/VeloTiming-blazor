@@ -1,10 +1,12 @@
 @implements IAsyncDisposable
 @using System.ComponentModel.DataAnnotations
+@using System.Xml
 @inject IRaceSvc svc
+@inject IJSRuntime jsRuntime
 
-@if (Error != null)
+@if (error != null)
 {
-	<div class="alert alert-danger">@Error</div>
+	<div class="alert alert-danger">@error</div>
 }
 @if (StartsList == null)
 {
@@ -35,7 +37,7 @@ else
 								<div class="btn-group">
 									@if (start.RealStart == null)
 									{
-										if (!HaveActiveStart)
+										if (!haveActiveStart)
 										{
 											<button class="btn btn-success" @onclick="@(() => Start(start.Id))">Начать</button>
 										}
@@ -53,15 +55,15 @@ else
 				</tbody>
 
 			</table>
-			@if (EditModel == null)
+			@if (editModel == null)
 			{
 				<button class="btn btn-outline-primary" @onclick="@(() => EditStart(null))">Добавить заезд</button>
 			}
 			else
 			{
-				<EditForm Model="@EditModel" OnValidSubmit="@SaveStart" class="bg-light p-3">
+				<EditForm Model="@editModel" OnValidSubmit="@SaveStart" class="bg-light p-3">
 					<DataAnnotationsValidator />
-					@if (EditModel.Id > 0)
+					@if (editModel.Id > 0)
 					{
 						<h3>Изменение заезда</h3>
 					}
@@ -72,17 +74,17 @@ else
 					<div class="form-row">
 						<div class="form-group col-2">
 							<label for="name">Название</label>
-							<InputText Name="name" @bind-Value="EditModel.Name" class="form-control" DisplayName="Название" />
-							<ValidationMessage For="@(() => EditModel.Name)" />
+							<InputText id="name" @bind-Value="editModel.Name" class="form-control" DisplayName="Название" />
+							<ValidationMessage For="@(() => editModel.Name)" />
 						</div>
 						<div class="form-group col-2">
 							<label for="plannedStart">Время старта</label>
-							<InputText type="time" @bind-Value="EditModel.PlannedStartString" class="form-control" DisplayName="Время старта" />
+							<InputText type="time" @bind-Value="editModel.PlannedStartString" class="form-control" DisplayName="Время старта" id="plannedStart" />
 						</div>
 						<div class="form-group col-2">
 							<label for="startType">Тип</label>
 							<div>
-								<InputRadioGroup id="startType" @bind-Value="EditModel.StartType">
+								<InputRadioGroup id="startType" @bind-Value="editModel.StartType">
 									<div class="form-check form-check-inline">
 										<InputRadio id="laps" Value="Proto.StartType.Laps" class="form-check-input"></InputRadio>
 										<label class="form-check-label" for="laps">Групповая гонка</label>
@@ -93,37 +95,37 @@ else
 									</div>
 								</InputRadioGroup>
 							</div>
-							<ValidationMessage For="@(() => EditModel.StartType)" />
+							<ValidationMessage For="@(() => editModel.StartType)" />
 						</div>
-						@if (EditModel.StartType == Proto.StartType.Laps)
+						@if (editModel.StartType == Proto.StartType.Laps)
 						{
 							<div class="form-group col-2">
 								<label for="delayMarksAfterStart" title="Сколько минут не добавлять результаты после старта">Задержка отм.(мин)</label>
-								<InputNumber @bind-Value="EditModel.DelayMarksAfterStartMinutes" class="form-control" DisplayName="Задержка" />
-								<ValidationMessage For="@(() => EditModel.DelayMarksAfterStartMinutes)" />
+								<InputNumber @bind-Value="editModel.DelayMarksAfterStartMinutes" class="form-control" DisplayName="Задержка" id="delayMarksAfterStart" />
+								<ValidationMessage For="@(() => editModel.DelayMarksAfterStartMinutes)" />
 							</div>
 						}
 						<div class="form-group col-4">
-							<label for="categories">Категории</label>
+							<label>Категории</label>
 							<div>
-								@foreach (var cat in EditModel.Categories)
+								@foreach (var cat in editModel.Categories)
 								{
 									var category = cat;
 									<div class="form-check form-check-inline">
 										<InputCheckbox @bind-Value="category.Selected" id="@($"category{category.Id}")" class="form-check-input" />
-										<label for="category@(category.Id)" class="form-check-label">@category.Name</label>
+										<label for="@($"category{category.Id}")" class="form-check-label">@category.Name</label>
 									</div>
 								}
 							</div>
 						</div>
 					</div>
 					<div class="form-row">
-						<button class="btn btn-primary" type="submit" disabled="@EditModel.IsSaving">
-							@if (EditModel.IsSaving)
+						<button class="btn btn-primary" type="submit" disabled="@editModel.IsSaving">
+							@if (editModel.IsSaving)
 							{<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>}
-							@($"{(EditModel.Id == 0 ? "Добавить" : "Сохранить")} заезд")
+							@($"{(editModel.Id == 0 ? "Добавить" : "Сохранить")} заезд")
 						</button>
-						<button class="btn btn-secondary ml-3" type="reset" disabled="@EditModel.IsSaving" @onclick="@(()=> EditModel = null)">Отмена</button>
+						<button class="btn btn-secondary ml-3" type="reset" disabled="@editModel.IsSaving" @onclick="@(()=> editModel = null)">Отмена</button>
 					</div>
 				</EditForm>
 			}
@@ -138,10 +140,10 @@ else
 	[Parameter]
 	public DateTime RaceDate { get; set; }
 
-	private string? Error;
+	private string? error;
 	private ICollection<Proto.Start>? StartsList { get; set; }
 	private ICollection<Proto.RaceCategory>? RaceCategories { get; set; }
-	private bool HaveActiveStart;
+	private bool haveActiveStart;
 	private IDisposable? subscription;
 
 
@@ -149,7 +151,7 @@ else
 	{
 		subscription = svc.GetRaceInfoSubject().Subscribe(r =>
 		{
-			HaveActiveStart = r != null;
+			haveActiveStart = r != null;
 			StateHasChanged();
 		});
 		await LoadStarts();
@@ -165,7 +167,7 @@ else
 	{
 		try
 		{
-			Error = null;
+			error = null;
 			if (RaceId <= 0) throw new ArgumentException("RaceId incorrect");
 			var startsCall = svc.GetStarts(RaceId);
 			var catsCall = svc.GetRaceCategories(RaceId);
@@ -175,27 +177,30 @@ else
 		}
 		catch (Exception ex)
 		{
-			Error = ex.ToString();
+			error = ex.ToString();
 		}
 	}
 
 	private void EditStart(Proto.Start? start)
 	{
 		if (RaceCategories != null)
-			EditModel = new StartEditModel(RaceDate, RaceCategories, start);
+			editModel = new StartEditModel(RaceDate, RaceCategories, start);
 	}
 
 	private async Task DeleteStart(int startId)
 	{
-		try
+		if (await Utils.Confirm(jsRuntime, "Удалить старт?"))
 		{
-			Error = null;
-			await svc.DeleteStart(startId);
-			await LoadStarts();
-		}
-		catch (Exception ex)
-		{
-			Error = ex.ToString();
+			try
+			{
+				error = null;
+				await svc.DeleteStart(startId);
+				await LoadStarts();
+			}
+			catch (Exception ex)
+			{
+				error = ex.ToString();
+			}
 		}
 	}
 
@@ -203,33 +208,33 @@ else
 	{
 		try
 		{
-			Error = null;
+			error = null;
 			await svc.SetActiveStart(startId);
 		}
 		catch (Exception ex)
 		{
-			Error = ex.ToString();
+			error = ex.ToString();
 		}
 	}
 
 	private async Task SaveStart()
 	{
-		if (EditModel == null) return;
+		if (editModel == null) return;
 		try
 		{
-			Error = null;
-			EditModel.IsSaving = true;
+			error = null;
+			editModel.IsSaving = true;
 			var start = new Proto.Start
 			{
-				DelayMarksAfterStartMinutes = EditModel.DelayMarksAfterStartMinutes ?? 0,
-				Id = EditModel.Id,
-				Name = EditModel.Name,
-				Type = EditModel.StartType,
-				PlannedStart = EditModel.PlannedStart.HasValue ?
-					Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(EditModel.PlannedStart.Value.ToUniversalTime()) :
+				DelayMarksAfterStartMinutes = editModel.DelayMarksAfterStartMinutes ?? 0,
+				Id = editModel.Id,
+				Name = editModel.Name,
+				Type = editModel.StartType,
+				PlannedStart = editModel.PlannedStart.HasValue ?
+					Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(editModel.PlannedStart.Value.ToUniversalTime()) :
 					null,
 			};
-			foreach (var cat in EditModel.Categories.Where(c => c.Selected))
+			foreach (var cat in editModel.Categories.Where(c => c.Selected))
 			{
 				start.Categories.Add(new Proto.Start.Types.Category
 				{
@@ -243,16 +248,16 @@ else
 				await svc.UpdateStart(start);
 
 			await LoadStarts();
-			EditModel = null;
+			editModel = null;
 		}
 		catch (Exception ex)
 		{
-			Error = ex.ToString();
-			if (EditModel != null) EditModel.IsSaving = false;
+			error = ex.ToString();
+			if (editModel != null) editModel.IsSaving = false;
 		}
 	}
 
-	private StartEditModel? EditModel;
+	private StartEditModel? editModel;
 
 	private class StartEditModel
 	{
@@ -295,10 +300,7 @@ else
 		public DateTime? PlannedStart { get; set; }
 		public string PlannedStartString
 		{
-			get
-			{
-				return PlannedStart?.ToString("HH:mm") ?? string.Empty;
-			}
+			get => PlannedStart?.ToString("HH:mm") ?? string.Empty;
 			set
 			{
 				if (TimeSpan.TryParse(value, out var timeSpan))

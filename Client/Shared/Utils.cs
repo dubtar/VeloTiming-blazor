@@ -1,5 +1,7 @@
 using Google.Protobuf.WellKnownTypes;
 using System;
+using System.Threading.Tasks;
+using Microsoft.JSInterop;
 
 namespace VeloTiming.Client
 {
@@ -26,9 +28,9 @@ namespace VeloTiming.Client
 
 		internal static string FormatSex(Proto.Sex sex, bool anyAsEmpty = false)
 		{
-			return sex == Proto.Sex.Any ? (anyAsEmpty ? "" : "Ëþáîé") :
-				sex == Proto.Sex.Male ? "Ìóæ" :
-				sex == Proto.Sex.Female ? "Æåí" :
+			return sex == Proto.Sex.Any ? (anyAsEmpty ? "" : "Ð›ÑŽÐ±Ð¾Ð¹") :
+				sex == Proto.Sex.Male ? "ÐœÑƒÐ¶" :
+				sex == Proto.Sex.Female ? "Ð–ÐµÐ½" :
 				sex.ToString();
 		}
 		internal static Proto.Sex ToProto(this Pages.Races.Sex sex)
@@ -39,6 +41,10 @@ namespace VeloTiming.Client
 		internal static Pages.Races.Sex ToEdit(this Proto.Sex sex)
 		{
 			return (Pages.Races.Sex)sex;
+		}
+		public static async Task<bool> Confirm(IJSRuntime jsRuntime, string message)
+		{
+			return await jsRuntime.InvokeAsync<bool>("confirm", message);
 		}
 	}
 }

@@ -2,7 +2,7 @@
 @page "/run"
 @inject IRaceSvc svc
 
-@if (Race == null)
+@if (race == null)
 {
 	<div class="container">Нет активного старта</div>
 }
@@ -11,20 +11,20 @@ else
 	<div class="container flex-fill">
 		<div class="d-flex h-100 flex-column">
 			<div class="d-flex justify-content-between">
-				<h1>@Race.Racename @Race.StartName</h1>
-				@if (@Race.StartTime != null) {
-					<Timer StartTime="@Race.StartTime.ToDateTime()"/>
+				<h1>@race.Racename @race.StartName</h1>
+				@if (race.StartTime != null) {
+					<Timer StartTime="@race.StartTime.ToDateTime()"/>
 				}
 			</div>
 			<div class="flex-fill">
 				<div class="d-flex justify-content-between">
-					@if (Race.StartTime == null)
+					@if (race.StartTime == null)
 					{
 						<button @onclick="@StartRace" class="btn btn-primary m-3">Начать гонку</button>
 					}
 					 <!--TODO: TimeTrialButtons -->
 				</div>
-				@if (Race.StartType == Proto.StartType.Laps)
+				@if (race.StartType == Proto.StartType.Laps)
 				{
 					<div>
 						<LapsTable />
@@ -48,7 +48,7 @@ else
 @code {
 	const string SOURCE = "UI";
 
-	Proto.RaceInfo? Race;
+	Proto.RaceInfo? race;
 	IDisposable? raceSubscription;
 	string? number;
 
@@ -58,7 +58,7 @@ else
 		KeyboardHandler.OnDocumentKeyDown += OnKeyDown;
 		raceSubscription = svc.GetRaceInfoSubject().Subscribe(r =>
 		{
-			Race = r;
+			race = r;
 			StateHasChanged();
 		});
 		return Task.CompletedTask;
@@ -70,16 +70,15 @@ else
 		raceSubscription?.Dispose();
 		return ValueTask.CompletedTask;
 	}
-
 	private void StartRace()
 	{
-		if (Race != null)
-			svc.MakeStart(Race.StartId);
+		if (race != null)
+			svc.MakeStart(race.StartId);
 	}
 
 	private void OnKeyDown(object? _, KeyboardEvent args)
 	{
-		if (Race == null || args.Repeat) return;
+		if (race == null || args.Repeat) return;
 		switch(args.Key)
 		{
 			case " ":

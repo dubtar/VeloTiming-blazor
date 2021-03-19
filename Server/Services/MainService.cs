@@ -69,7 +69,7 @@ namespace VeloTiming.Server.Services
 
 		public override Task<GetResultsResponse> GetResults(Empty request, ServerCallContext context)
 		{
-			var results = raceLogic.GetMarks();
+			var results = raceLogic.GetResults();
 			var result = new GetResultsResponse();
 			result.Results.AddRange(results.Select(Utils.ToProto));
 			return Task.FromResult(result);

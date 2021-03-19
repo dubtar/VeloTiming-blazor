@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
@@ -12,12 +13,11 @@ using VeloTiming.Server.Services;
 
 namespace VeloTiming.Server.Logic
 {
-
 	public interface IRaceLogic
 	{
 		void StartRun(DateTime realStart);
 		RaceInfo? GetRaceInfo();
-		IEnumerable<Result> GetMarks();
+		IEnumerable<Result> GetResults();
 		void AddTime(DateTime time, string source);
 		void AddNumber(string number, string source);
 		void UpdateMark(Result mark);
@@ -101,7 +101,7 @@ namespace VeloTiming.Server.Logic
 			await hub.Clients.All.ActiveStart(race.ToProto());
 		}
 
-		public IEnumerable<Result> GetMarks()
+		public IEnumerable<Result> GetResults()
 		{
 			lock (results)
 			{
@@ -118,9 +118,9 @@ namespace VeloTiming.Server.Logic
 		{
 			if (RaceIsRunning())
 			{
-				time = time.ToLocalTime();
+				time = time.ToUniversalTime();
 				taskQueue.QueueBackgroundWorkItem((_) =>
-				   ProcessAddMark(time, null, source)
+					ProcessAddMark(time, null, source)
 				);
 			}
 		}
@@ -129,7 +129,7 @@ namespace VeloTiming.Server.Logic
 		{
 			if (RaceIsRunning())
 				taskQueue.QueueBackgroundWorkItem((_) =>
-				   ProcessAddMark(null, number, source)
+					ProcessAddMark(null, number, source)
 				);
 		}
 
@@ -144,7 +144,7 @@ namespace VeloTiming.Server.Logic
 		public void UpdateMark(Result mark)
 		{
 			taskQueue.QueueBackgroundWorkItem((token) =>
-			   ProcessUpdateMark(mark, token)
+				ProcessUpdateMark(mark, token)
 			);
 		}
 
@@ -165,14 +165,14 @@ namespace VeloTiming.Server.Logic
 				await hub.Clients.All.RaceStarted(race.ToProto()!);
 		}
 
-		private async Task SendResultAdded(Result mark)
+		private async Task SendResultAdded(Result result)
 		{
-			await hub.Clients.All.ResultAdded(mark.ToProto());
+			await hub.Clients.All.ResultAdded(result.ToProto());
 		}
 
-		private async Task SendResultUpdated(Result mark)
+		private async Task SendResultUpdated(Result result)
 		{
-			await hub.Clients.All.ResultUpdated(mark.ToProto());
+			await hub.Clients.All.ResultUpdated(result.ToProto());
 		}
 		#endregion
 
@@ -180,6 +180,8 @@ namespace VeloTiming.Server.Logic
 		private const int MARKS_MERGE_SECONDS = 30;
 		private Task ProcessAddMark(DateTime? time, string? number, string source)
 		{
+			var logTask = WriteLog(time, number, source);
+
 			if (race == null) throw new Exception("Race not started");
 			string? riderName = null;
 			if (!string.IsNullOrEmpty(number) && !race.Numbers.TryGetValue(number, out riderName))
@@ -210,7 +212,7 @@ namespace VeloTiming.Server.Logic
 					result = nearbyResults.FirstOrDefault(r => !r.Time.HasValue);
 					if (result == null)
 					{
-						results.Add(result = Result.Create(timeService, race.StartId)); // add new time without number
+						results.Add(result = Result.Create(timeService, race.StartId));// add new time without number
 						added = true;
 					}
 					result.Time = time;
@@ -253,13 +255,6 @@ namespace VeloTiming.Server.Logic
 				if (result != null)
 				{
 					result.Name = riderName;
-					result.Data.Add(new MarkData
-					{
-						CreatedOn = timeService.Now,
-						Number = number,
-						Source = source,
-						Time = time
-					});
 					if (reorder)
 						results.Sort((a, b) => (a.Time ?? a.CreatedOn.AddSeconds(MARKS_MERGE_SECONDS)).CompareTo(b.Time ?? b.CreatedOn.AddSeconds(MARKS_MERGE_SECONDS)));
 					ProcessPlace(result);
@@ -268,7 +263,13 @@ namespace VeloTiming.Server.Logic
 					task = Task.WhenAll(task, StoreResult(result));
 				}
 			}
-			return task ?? Task.CompletedTask;
+			return task == null ? logTask : Task.WhenAll(task, logTask);
+		}
+		
+		private Task WriteLog(DateTime? time, string? number, string source)
+		{
+			var val = (time == null ? "" : $"Time: {time} ") + (number == null ? "" : $"Number: {number}");
+			return File.AppendAllLinesAsync("marks.log", new[] { $"{DateTime.UtcNow}: {source} {val}" });
 		}
 
 		private void ProcessPlace(Result result, int? index = null)
@@ -282,11 +283,11 @@ namespace VeloTiming.Server.Logic
 				return;
 			}
 			int lap = 0;
-			List<int> places = new List<int>();
+			List<int> places = new();
 			for (int i = 0; i < index; i++)
 			{
 				var res = results[i];
-				if (res.IsIgnored || string.IsNullOrEmpty(result.Number)) continue;
+				if (res.IsIgnored || string.IsNullOrEmpty(res.Number)) continue;
 				int curLap;
 				if (res.Number == result.Number)
 					curLap = lap++;
@@ -296,13 +297,12 @@ namespace VeloTiming.Server.Logic
 					places.Add(1);
 				else
 					places[curLap]++;
-
 			}
 			result.Lap = lap + 1;
 			result.Place = places.Count > lap ? places[lap] + 1 : 1;
 			// recalculate all results after that
-			for (int i = index.Value + 1; i < results.Count; i++)
-				ProcessPlace(results[i], i);
+			if (results.Count > index.Value + 1)
+				ProcessPlace(results[index.Value + 1], index.Value + 1);
 		}
 
 		private async Task StoreResult(Result result)
