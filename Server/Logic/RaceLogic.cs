@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -97,7 +98,19 @@ namespace VeloTiming.Server.Logic
 				}
 				race = null;
 			}
-			race = start == null ? null : new RaceInfo(start, numbers);
+			if (start == null)
+				race = null;
+			else
+			{
+				if (numbers == null)
+				{
+					using var scope = serviceProvider.CreateScope();
+					var dataContext = scope.ServiceProvider.GetRequiredService<RacesDbContext>();
+					numbers = await BuildNumbersDictionary(dataContext, start.Id);
+				}
+
+				race = new RaceInfo(start, numbers);
+			}
 			await hub.Clients.All.ActiveStart(race.ToProto());
 		}
 
@@ -190,7 +203,7 @@ namespace VeloTiming.Server.Logic
 				return Task.CompletedTask;
 			}
 
-			DateTime markTime = time ?? timeService.Now;
+			var markTime = time ?? timeService.Now;
 			// Do not add mark if less minute from start than delay
 			if (time.HasValue && race.Start.HasValue && (time.Value - race.Start.Value).TotalMinutes < race.DelayMarksAfterStartMinutes)
 				return Task.CompletedTask;
@@ -243,10 +256,6 @@ namespace VeloTiming.Server.Logic
 						results.Add(result);
 						reorder = added = true;
 					}
-					else
-					{
-						riderName = result.Name;
-					}
 					// TODO: update time based on source priority
 					result.Time = time;
 					result.TimeSource = source;
@@ -254,7 +263,7 @@ namespace VeloTiming.Server.Logic
 
 				if (result != null)
 				{
-					result.Name = riderName;
+					if (riderName != null) result.Name = riderName;
 					if (reorder)
 						results.Sort((a, b) => (a.Time ?? a.CreatedOn.AddSeconds(MARKS_MERGE_SECONDS)).CompareTo(b.Time ?? b.CreatedOn.AddSeconds(MARKS_MERGE_SECONDS)));
 					ProcessPlace(result);
@@ -265,11 +274,14 @@ namespace VeloTiming.Server.Logic
 			}
 			return task == null ? logTask : Task.WhenAll(task, logTask);
 		}
-		
+
 		private Task WriteLog(DateTime? time, string? number, string source)
 		{
 			var val = (time == null ? "" : $"Time: {time} ") + (number == null ? "" : $"Number: {number}");
-			return File.AppendAllLinesAsync("marks.log", new[] { $"{DateTime.UtcNow}: {source} {val}" });
+			return File.AppendAllLinesAsync("marks.log", new[]
+			{
+				$"{DateTime.UtcNow}: {source} {val}"
+			});
 		}
 
 		private void ProcessPlace(Result result, int? index = null)
@@ -328,7 +340,7 @@ namespace VeloTiming.Server.Logic
 
 public class RaceInfo
 {
-	public RaceInfo(Start start, Dictionary<string, string>? numbers)
+	public RaceInfo(Start start, Dictionary<string, string> numbers)
 	{
 		RaceId = start.RaceId;
 		StartId = start.Id;
@@ -336,7 +348,7 @@ public class RaceInfo
 		StartName = start.Name;
 		Start = start.RealStart;
 		DelayMarksAfterStartMinutes = start.DelayMarksAfterStartMinutes;
-		Numbers = new ReadOnlyDictionary<string, string>(numbers ?? new Dictionary<string, string>());
+		Numbers = new ReadOnlyDictionary<string, string>(numbers);
 		Type = start.Type;
 	}
 
