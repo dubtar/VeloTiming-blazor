@@ -1,0 +1,15 @@
+﻿syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+option csharp_namespace = "VeloTiming.Proto";
+
+message Result {
+  string Id = 1;
+  google.protobuf.Timestamp CreatedOn = 2;
+  google.protobuf.Timestamp Time = 3;
+  string Number = 4;
+  string TimeSource = 5;
+  string NumberSource = 6;
+  int32 Lap = 7;
+  int32 Place = 8;
+  string Rider = 9;
+}

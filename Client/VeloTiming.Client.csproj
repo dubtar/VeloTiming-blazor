@@ -43,6 +43,9 @@
 		<Protobuf Include="..\Shared\Rider.proto" GrpcServices="Client" Access="Internal">
 			<Link>Protos\Rider.proto</Link>
 		</Protobuf>
+		<Protobuf Include="..\Shared\Result.proto" GrpcServices="Client" Access="Internal">
+			<Link>Protos\Result.proto</Link>
+		</Protobuf>
 	</ItemGroup>
 
 </Project>

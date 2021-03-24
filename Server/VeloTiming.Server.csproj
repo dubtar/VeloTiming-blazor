@@ -44,6 +44,9 @@
     <Protobuf Include="..\Shared\Start.proto" GrpcServices="Server">
       <Link>Protos\Start.proto</Link>
     </Protobuf>
+    <Protobuf Include="..\Shared\Result.proto" GrpcServices="Server">
+      <Link>Protos\Result.proto</Link>
+    </Protobuf>
   </ItemGroup>
 
 </Project>

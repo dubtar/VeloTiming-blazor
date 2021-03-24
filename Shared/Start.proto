@@ -2,6 +2,7 @@
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
+import "Result.proto";
 
 option csharp_namespace = "VeloTiming.Proto";
 
@@ -19,6 +20,8 @@ message Start {
         string Code = 2;
         string Name = 3;
     }
+    int32 RaceId = 10;
+    string RaceName = 11;
 }
 
 enum StartType {
@@ -32,6 +35,7 @@ service Starts {
     rpc add(AddStartRequest) returns (Start);
     rpc update(Start) returns(Start);
     rpc delete(DeleteStartRequest) returns (google.protobuf.Empty);
+    rpc getResults(GetStartRequest) returns (GetResultsResponse);
 }
 
 message GetStartsByRaceRequest
@@ -58,3 +62,7 @@ message AddStartRequest {
     Start Start = 2;
 }
 
+message GetResultsResponse {
+    repeated Result Results = 1;
+    Start Start = 2;
+}

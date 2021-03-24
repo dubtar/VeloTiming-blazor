@@ -23,6 +23,7 @@ namespace VeloTiming.Client
 
 		Task<string> ImportRiders(ImportRidersRequest request);
 		Task<IList<Start>> GetStarts(int raceId);
+		Task<Start> GetStart(int startId);
 		Task DeleteStart(int startId);
 		Task<Start> AddStart(int raceId, Start start);
 		Task<Start> UpdateStart(Start start);
@@ -34,6 +35,7 @@ namespace VeloTiming.Client
 		Task MakeStart(int startId);
 		void AddTime(string source);
 		void AddNumber(string number, string source);
+		Task<GetResultsResponse> GetStartResults(int id);
 	}
 
 	internal class RaceSvc: IRaceSvc, IAsyncDisposable
@@ -41,10 +43,10 @@ namespace VeloTiming.Client
 		private readonly GrpcChannel channel;
 		private readonly HubConnection hubConnection;
 
-		private readonly BehaviorSubject<RaceInfo?> raceInfo = new BehaviorSubject<RaceInfo?>(null);
+		private readonly BehaviorSubject<RaceInfo?> raceInfo = new(null);
 		public IObservable<RaceInfo?> GetRaceInfoSubject() => raceInfo;
 
-		private readonly BehaviorSubject<Result[]> results = new BehaviorSubject<Result[]>(new Result[0]);
+		private readonly BehaviorSubject<Result[]> results = new(Array.Empty<Result>());
 		public IObservable<Result[]> GetResultsSubscription() => results;
 
 		public RaceSvc(GrpcChannel channel, NavigationManager navigationManager)
@@ -67,9 +69,9 @@ namespace VeloTiming.Client
 			_ = LoadResults();
 		}
 
-		private Races.RacesClient? client;
-		private Races.RacesClient Client =>
-			client ??= new Races.RacesClient(channel);
+		private Races.RacesClient? racesClient;
+		private Races.RacesClient RacesClient =>
+			racesClient ??= new Races.RacesClient(channel);
 
 		private Main.MainClient? mainClient;
 		private Main.MainClient MainClient =>
@@ -79,25 +81,25 @@ namespace VeloTiming.Client
 		{
 			var req = new GetRaceRequest
 				{ RaceId = raceId };
-			var res = await Client.getRaceAsync(req);
+			var res = await RacesClient.getRaceAsync(req);
 			return res;
 		}
 
 		public async Task<IList<Race>> GetAllRaces()
 		{
-			var req = await Client.getRacesAsync(new Empty());
+			var req = await RacesClient.getRacesAsync(new Empty());
 			return req.Races;
 		}
 
 		public async Task<int> UpdateRace(Race race)
 		{
-			var res = await Client.updateRaceAsync(race);
+			var res = await RacesClient.updateRaceAsync(race);
 			return res.Id;
 		}
 
 		public async Task DeleteRace(int raceId)
 		{
-			await Client.deleteRaceAsync(new DeleteRaceRequest { RaceId = raceId });
+			await RacesClient.deleteRaceAsync(new DeleteRaceRequest { RaceId = raceId });
 		}
 		public async Task<IList<RaceCategory>> GetRaceCategories(int raceId)
 		{
@@ -108,7 +110,7 @@ namespace VeloTiming.Client
 
 		public async Task<string> ImportRiders(ImportRidersRequest request)
 		{
-			var res = await Client.importRidersAsync(request);
+			var res = await RacesClient.importRidersAsync(request);
 			return res.Result;
 		}
 
@@ -123,6 +125,11 @@ namespace VeloTiming.Client
 			return res.Starts;
 		}
 
+		public async Task<Start> GetStart(int startId)
+		{
+			return await StartsClient.getAsync(new GetStartRequest {StartId = startId});
+		}
+		
 		public async Task DeleteStart(int startId)
 		{
 			await StartsClient.deleteAsync(new DeleteStartRequest { StartId = startId });
@@ -228,6 +235,11 @@ namespace VeloTiming.Client
 		public void AddNumber(string number, string source)
 		{
 			_ = hubConnection.SendAsync("AddNumber", number, source);
+		}
+
+		public async Task<GetResultsResponse> GetStartResults(int startId)
+		{
+			return  await StartsClient.getResultsAsync(new GetStartRequest { StartId = startId });
 		}
 	}
 }
