@@ -5,205 +5,226 @@
 @implements IDisposable
 
 <div tabindex="0">
-	@if (Error != null)
-	{
-		<div class="alert alert-danger">@Error</div>
-	}
-	@if (RidersList == null)
-	{
-		<LoadingSpinner />
-	}
-	else
-	{
-		@if (EditModel == null)
-		{
-			<button class="btn btn-outline-primary my-3" @onclick="@(() => EditRider(null))">Добавить участника (Ins)</button>
-			<button class="btn btn-secondary float-right" @onclick="@ShowImport">Импорт участников</button>
-		}
-		else if (EditModel.Id == 0)
-		{
-			<RiderEdit EditModel="@EditModel" Categories="@Categories" Cancel="@(_ => EditModel = null)" SaveRider="@SaveRider" />
-		}
-		<ImportRiders @ref="importRiders" RaceId="RaceId" OnImported="@(async () => await LoadRiders())" />
+    @if (Error != null)
+    {
+        <div class="alert alert-danger">@Error</div>
+    }
+    @if (RidersList == null)
+    {
+        <LoadingSpinner/>
+    }
+    else
+    {
+        @if (EditModel == null)
+        {
+            <div class="d-flex">
+                <div class="flex-grow-1">
+                    <button class="btn btn-outline-primary my-3" @onclick="@(() => EditRider(null))">Добавить участника (Ins)</button>
+                    <button class="btn btn-secondary float-right" @onclick="@ShowImport">Импорт участников</button>
+                </div>
+                <div style="min-width: 100px;">
+                    <input @bind-value="@Filter" @bind-value:event="oninput" class="form-control" type="search" placeholder="поиск" aria-label="Search"/>
+                </div>
+            </div>
+            
+        }
+        else if (EditModel.Id == 0)
+        {
+            <RiderEdit EditModel="@EditModel" Categories="@Categories" Cancel="@(_ => EditModel = null)" SaveRider="@SaveRider"/>
+        }
+        <ImportRiders @ref="importRiders" RaceId="RaceId" OnImported="@(async () => await LoadRiders())"/>
 
-		<table class="table table-striped table-hover table-bordered">
-			<thead>
-				<tr>
-					<th />
-					<th>Номер</th>
-					<th>Имя</th>
-					<th>Пол</th>
-					<th>Г.р.</th>
-					<th>Возр.</th>
-					<th>Кат.</th>
-					<th>Город</th>
-					<th>Команда</th>
-					<th />
-				</tr>
-			</thead>
-			<tbody>
-				@for (var i = 0; i < RidersList.Count; i++)
-				{
-					var rider = RidersList[i];
-					<tr @key="rider.Id">
-						<td>@(i+1)</td>
-						<td>@rider.Number</td>
-						<td>@rider.LastName @rider.FirstName</td>
-						<td>@Utils.FormatSex(rider.Sex, anyAsEmpty: true)</td>
-						<td>@rider.YearOfBirth</td>
-						<td>@(rider.YearOfBirth != null ? (DateTime.Now.Year - rider.YearOfBirth).ToString() : "")</td>
-						<td>@rider.Category</td>
-						<td>@rider.City</td>
-						<td>@rider.Team</td>
-						<td>
-							<div class="btn-group">
-								<button class="btn btn-primary" @onclick="() => EditRider(rider)">Изменить</button>
-								<button class="btn btn-outline-danger" @onclick="() => DeleteRider(rider.Id)">Удалить</button>
-							</div>
-						</td>
-					</tr>
-					@if (EditModel?.Id == rider.Id)
-					{
-						<tr>
-							<td colspan="10">
-								<RiderEdit EditModel="@EditModel" Categories="@Categories" Cancel="@(_ => EditModel = null)" SaveRider="@SaveRider" />
-							</td>
-						</tr>
-					}
-				}
-			</tbody>
-		</table>
-	}
+        <table class="table table-striped table-hover table-bordered">
+            <thead>
+            <tr>
+                <th/>
+                <th>Номер</th>
+                <th>
+                    Имя
+                </th>
+                <th>Пол</th>
+                <th>Г.р.</th>
+                <th>Возр.</th>
+                <th>Кат.</th>
+                <th>Город</th>
+                <th>Команда</th>
+                <th/>
+            </tr>
+            </thead>
+            <tbody>
+            @for (var i = 0; i < RidersList.Count; i++)
+            {
+                var rider = RidersList[i];
+                if (!string.IsNullOrWhiteSpace(Filter) &&
+                    !$"{rider.LastName} {rider.FirstName}".Contains(Filter, StringComparison.CurrentCultureIgnoreCase)
+                    && rider.Number != Filter
+                )
+                {
+                    continue;
+                }
+                <tr @key="rider.Id">
+                    <td>@(i + 1)</td>
+                    <td>@rider.Number</td>
+                    <td>@rider.LastName @rider.FirstName</td>
+                    <td>@Utils.FormatSex(rider.Sex, anyAsEmpty: true)</td>
+                    <td>@rider.YearOfBirth</td>
+                    <td>@(rider.YearOfBirth != null ? (DateTime.Now.Year - rider.YearOfBirth).ToString() : "")</td>
+                    <td>@rider.Category</td>
+                    <td>@rider.City</td>
+                    <td>@rider.Team</td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" @onclick="() => EditRider(rider)">Изменить</button>
+                            <button class="btn btn-outline-danger" @onclick="() => DeleteRider(rider.Id)">Удалить</button>
+                        </div>
+                    </td>
+                </tr>
+                @if (EditModel?.Id == rider.Id)
+                {
+                    <tr>
+                        <td colspan="10">
+                            <RiderEdit EditModel="@EditModel" Categories="@Categories" Cancel="@(_ => EditModel = null)" SaveRider="@SaveRider"/>
+                        </td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    }
 </div>
 
 @code {
-	[Parameter]
-	public int RaceId { get; set; }
+
+    [Parameter]
+    public int RaceId { get; set; }
 
 
-	IList<Proto.Rider>? RidersList;
-	IList<RiderEditCategory>? Categories;
-	string? Error;
-	ImportRiders? importRiders;
+    IList<Proto.Rider>? RidersList;
+    IList<RiderEditCategory>? Categories;
+    string? Error;
+    ImportRiders? importRiders;
 
-	//TODO: subscribe to rfid signalR and set number for edited rider
-	protected override async Task OnInitializedAsync()
-	{
-		KeyboardHandler.OnDocumentKeyDown += OnKeyDown;
+    private string? Filter { get; set; }
 
-		if (RaceId <= 0)
-		{
-			Error = $"RaceId {RaceId}";
-		}
-		else
-		{
-			await LoadRiders();
-		}
-	}
+    //TODO: subscribe to rfid signalR and set number for edited rider
+    protected override async Task OnInitializedAsync()
+    {
+        KeyboardHandler.OnDocumentKeyDown += OnKeyDown;
 
-	public void Dispose()
-	{
-		KeyboardHandler.OnDocumentKeyDown -= OnKeyDown;
-	}
+        if (RaceId <= 0)
+        {
+            Error = $"RaceId {RaceId}";
+        }
+        else
+        {
+            await LoadRiders();
+        }
+    }
 
-	async Task LoadRiders()
-	{
-		try
-		{
-			var client = new Proto.Riders.RidersClient(channel);
-			var response = client.getByRaceAsync(new Proto.GetRidersByRaceRequest { RaceId = RaceId });
-			var catResponse = raceSvc.GetRaceCategories(RaceId);
-			RidersList = (await response).Riders;
-			Categories = (await catResponse).Select(c => new RiderEditCategory(c)).ToList();
-		}
-		catch (Exception ex)
-		{
-			Error = ex.ToString();
-		}
-		StateHasChanged();
-	}
+    public void Dispose()
+    {
+        KeyboardHandler.OnDocumentKeyDown -= OnKeyDown;
+    }
 
-	private void EditRider(Proto.Rider? rider)
-	{
-		EditModel = new RiderEditModel
-		{
-			Id = rider?.Id ?? 0,
-			Number = rider?.Number ?? "",
-			Category = rider?.Category ?? "",
-			City = rider?.City ?? "",
-			FirstName = rider?.FirstName ?? "",
-			LastName = rider?.LastName ?? "",
-			Sex = Utils.ToEdit(rider?.Sex ?? Proto.Sex.Any),
-			Team = rider?.Team ?? "",
-			YearOfBirth = rider?.YearOfBirth
-		};
-		StateHasChanged();
-	}
+    async Task LoadRiders()
+    {
+        try
+        {
+            var client = new Proto.Riders.RidersClient(channel);
+            var response = client.getByRaceAsync(new Proto.GetRidersByRaceRequest {RaceId = RaceId});
+            var catResponse = raceSvc.GetRaceCategories(RaceId);
+            RidersList = (await response).Riders;
+            Categories = (await catResponse).Select(c => new RiderEditCategory(c)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.ToString();
+        }
+        StateHasChanged();
+    }
 
-	private async Task DeleteRider(int riderId)
-	{
-		try
-		{
-			var client = new Proto.Riders.RidersClient(channel);
-			await client.deleteAsync(new Proto.DeleteRiderRequest { RiderId = riderId });
-			_ = LoadRiders();
-		}
-		catch (Exception ex)
-		{
-			Error = ex.ToString();
-		}
-	}
+    private void EditRider(Proto.Rider? rider)
+    {
+        EditModel = new RiderEditModel
+        {
+            Id = rider?.Id ?? 0,
+            Number = rider?.Number ?? "",
+            Category = rider?.Category ?? "",
+            City = rider?.City ?? "",
+            FirstName = rider?.FirstName ?? "",
+            LastName = rider?.LastName ?? "",
+            Sex = Utils.ToEdit(rider?.Sex ?? Proto.Sex.Any),
+            Team = rider?.Team ?? "",
+            YearOfBirth = rider?.YearOfBirth
+        };
+        StateHasChanged();
+    }
 
-	async Task SaveRider()
-	{
-		try
-		{
-			if (EditModel == null) throw new ArgumentNullException("EditModel is null");
-			var rider = new Proto.Rider
-			{
-				Id = EditModel.Id,
-				Number = EditModel.Number ?? "",
-				YearOfBirth = EditModel.YearOfBirth,
-				LastName = EditModel.LastName,
-				FirstName = EditModel.FirstName,
-				Sex = EditModel.Sex.ToProto(),
-				Category = EditModel.Category ?? "",
-				City = EditModel.City ?? "",
-				Team = EditModel.Team ?? ""
-			};
-			var client = new Proto.Riders.RidersClient(channel);
-			if (EditModel.Id == 0)
-			{
-				var raceId = RaceId;
-				await client.addAsync(new Proto.AddRiderRequest { RaceId = raceId, Rider = rider });
-			}
-			else
-			{
-				await client.updateAsync(rider);
-			}
-			EditModel = null;
-			RidersList = null;
-			_ = LoadRiders();
-		}
-		catch (Exception ex)
-		{
-			Error = ex.ToString();
-		}
-	}
+    private async Task DeleteRider(int riderId)
+    {
+        try
+        {
+            var client = new Proto.Riders.RidersClient(channel);
+            await client.deleteAsync(new Proto.DeleteRiderRequest {RiderId = riderId});
+            _ = LoadRiders();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.ToString();
+        }
+    }
 
-	RiderEditModel? EditModel;
+    async Task SaveRider()
+    {
+        try
+        {
+            if (EditModel == null) throw new ArgumentNullException("EditModel is null");
+            var rider = new Proto.Rider
+            {
+                Id = EditModel.Id,
+                Number = EditModel.Number ?? "",
+                YearOfBirth = EditModel.YearOfBirth,
+                LastName = EditModel.LastName,
+                FirstName = EditModel.FirstName,
+                Sex = EditModel.Sex.ToProto(),
+                Category = EditModel.Category ?? "",
+                City = EditModel.City ?? "",
+                Team = EditModel.Team ?? ""
+            };
+            var client = new Proto.Riders.RidersClient(channel);
+            if (EditModel.Id == 0)
+            {
+                var raceId = RaceId;
+                await client.addAsync(new Proto.AddRiderRequest {RaceId = raceId, Rider = rider});
+            }
+            else
+            {
+                await client.updateAsync(rider);
+            }
+            EditModel = null;
+            RidersList = null;
+            _ = LoadRiders();
+        }
+        catch (Exception ex)
+        {
+            Error = ex.ToString();
+        }
+    }
+
+    RiderEditModel? EditModel;
 
 
-	private void OnKeyDown(object? _, KeyboardEvent args)
-	{
-		if (args.Key == "Insert" && RidersList != null && EditModel == null)
-		{
-			EditRider(null);
-			StateHasChanged();
-		}
-	}
-	private void ShowImport()
-	{
-		importRiders?.Show();
-	}
+    private void OnKeyDown(object? _, KeyboardEvent args)
+    {
+        if (args.Key == "Insert" && RidersList != null && EditModel == null)
+        {
+            EditRider(null);
+            StateHasChanged();
+        }
+    }
+
+    private void ShowImport()
+    {
+        importRiders?.Show();
+    }
 }
